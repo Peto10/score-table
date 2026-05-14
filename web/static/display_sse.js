@@ -1,29 +1,30 @@
 (() => {
   const scoreboard = document.getElementById("scoreboard");
+  const idleMessage = document.getElementById("idleMessage");
   const team1Name = document.getElementById("team1Name");
   const team2Name = document.getElementById("team2Name");
   const team1Score = document.getElementById("team1Score");
   const team2Score = document.getElementById("team2Score");
 
-  const setHidden = (hidden) => {
-    if (!scoreboard) return;
-    scoreboard.classList.toggle("isHidden", hidden);
+  const setState = (active) => {
+    if (scoreboard) scoreboard.classList.toggle("isHidden", !active);
+    if (idleMessage) idleMessage.classList.toggle("isHidden", !!active);
   };
 
   const applySnapshot = (snap) => {
     if (!snap || !snap.active) {
-      setHidden(true);
+      setState(false);
       return;
     }
     team1Name.textContent = snap.team1Name || "";
     team2Name.textContent = snap.team2Name || "";
     team1Score.textContent = String(snap.team1Score ?? 0);
     team2Score.textContent = String(snap.team2Score ?? 0);
-    setHidden(false);
+    setState(true);
   };
 
-  // Keep the page visually empty until a match is active.
-  setHidden(true);
+  // Default to idle until we receive a snapshot.
+  setState(false);
 
   const es = new EventSource("/events/score");
   es.addEventListener("snapshot", (e) => {
@@ -33,7 +34,7 @@
       // ignore
     }
   });
-  es.addEventListener("clear", () => setHidden(true));
+  es.addEventListener("clear", () => setState(false));
   es.onerror = () => {
     // EventSource will reconnect; keep last known state.
   };
