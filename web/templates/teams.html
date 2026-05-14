@@ -4,7 +4,55 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Teams</title>
-    <link rel="stylesheet" href="/static/app.css?v=24" />
+    <link rel="stylesheet" href="/static/app.css?v=31" />
+    <script>
+      window.addEventListener("click", (e) => {
+        const btn = e.target?.closest?.("[data-confirm]");
+        if (!btn) return;
+        const msg = btn.getAttribute("data-confirm") || "Are you sure?";
+        if (!confirm(msg)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const dlg = document.getElementById("teamDialog");
+        const form = document.getElementById("teamForm");
+        const title = document.getElementById("teamDialogTitle");
+        const teamName = document.getElementById("teamName");
+        const player1 = document.getElementById("player1");
+        const player2 = document.getElementById("player2");
+        const cancelBtn = document.getElementById("teamDialogCancel");
+
+        const openAdd = () => {
+          title.textContent = "Add team";
+          form.action = "/control_panel/teams/create";
+          teamName.value = "";
+          player1.value = "";
+          player2.value = "";
+          dlg.showModal();
+          teamName.focus();
+        };
+
+        const openEdit = (btn) => {
+          title.textContent = "Edit team";
+          const id = btn.getAttribute("data-team-id");
+          form.action = "/control_panel/teams/" + encodeURIComponent(id) + "/update";
+          teamName.value = btn.getAttribute("data-team-name") || "";
+          player1.value = btn.getAttribute("data-player1") || "";
+          player2.value = btn.getAttribute("data-player2") || "";
+          dlg.showModal();
+          teamName.focus();
+        };
+
+        document.getElementById("addTeamBtn")?.addEventListener("click", openAdd);
+        document.querySelectorAll("[data-edit-team]").forEach((b) => {
+          b.addEventListener("click", () => openEdit(b));
+        });
+        cancelBtn?.addEventListener("click", () => dlg.close());
+      });
+    </script>
   </head>
   <body class="panelBody">
     <main class="panelWrap">
@@ -12,28 +60,84 @@
         <div>
           <div class="panelKicker">Control panel</div>
           <h1 class="panelTitle">Teams overview</h1>
-          <div class="muted">All teams and their members from the config.</div>
+          <div class="muted">Add, edit, and remove teams stored in the database.</div>
         </div>
         <nav class="panelNav">
+          <button class="btn btnPrimary" id="addTeamBtn" type="button">Add team</button>
           <a class="btn btnGhost" href="/control_panel">Back</a>
         </nav>
       </header>
 
-      <section class="teamsGrid">
-        {{range .Teams}}
-          <article class="teamCard">
-            <header class="teamCardHeader">
-              <div class="teamCardTitle teamClamp">{{.Name}}</div>
-              <div class="teamCardMeta muted">{{len .Players}} players</div>
-            </header>
-            <div class="teamPlayers">
-              {{range .Players}}
-                <div class="playerChip">{{.Name}}</div>
-              {{end}}
-            </div>
-          </article>
+      {{if .Error}}
+        <div class="alert alertError">{{.Error}}</div>
+      {{end}}
+
+      <section class="card">
+        {{if not .Teams}}
+          <div class="muted">No teams yet. Click <strong>Add team</strong> to create your first one.</div>
         {{end}}
+        <div class="historyList">
+          {{range .Teams}}
+            <div class="historyItem">
+              <div class="historyMain">
+                <div class="historyTeams teamClamp">{{.Name}}</div>
+                <div class="historyMeta muted">
+                  <span>{{len .Players}} players</span>
+                </div>
+                <div class="teamPlayers">
+                  {{range .Players}}
+                    <div class="playerChip">{{.Name}}</div>
+                  {{end}}
+                </div>
+              </div>
+              <div class="historyActions">
+                <button
+                  class="btn btnGhost"
+                  type="button"
+                  data-edit-team
+                  data-team-id="{{.ID}}"
+                  data-team-name="{{.Name}}"
+                  data-player1="{{if ge (len .Players) 1}}{{(index .Players 0).Name}}{{end}}"
+                  data-player2="{{if ge (len .Players) 2}}{{(index .Players 1).Name}}{{end}}"
+                >
+                  Edit
+                </button>
+                <form method="post" action="/control_panel/teams/{{.ID}}/delete">
+                  <button class="btn btnDanger" type="submit" data-confirm="Delete team &quot;{{.Name}}&quot;?">Delete</button>
+                </form>
+              </div>
+            </div>
+          {{end}}
+        </div>
       </section>
+
+      <dialog class="modal" id="teamDialog">
+        <form class="modalCard" id="teamForm" method="post" action="/control_panel/teams/create">
+          <header class="modalHeader">
+            <div class="modalTitle" id="teamDialogTitle">Add team</div>
+          </header>
+
+          <div class="modalBody">
+            <label class="field">
+              <span class="labelText">Team name</span>
+              <input class="textInput" id="teamName" name="team_name" type="text" required maxlength="80" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span class="labelText">Player 1</span>
+              <input class="textInput" id="player1" name="player1" type="text" required maxlength="80" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span class="labelText">Player 2</span>
+              <input class="textInput" id="player2" name="player2" type="text" required maxlength="80" autocomplete="off" />
+            </label>
+          </div>
+
+          <footer class="modalFooter">
+            <button class="btn btnGhost" id="teamDialogCancel" type="button">Cancel</button>
+            <button class="btn btnSuccess" type="submit">Save</button>
+          </footer>
+        </form>
+      </dialog>
     </main>
   </body>
 </html>
