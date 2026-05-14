@@ -114,6 +114,17 @@ code{
 }
 .field{display:flex; flex-direction:column; gap:8px}
 .labelText{color:rgba(238,242,255,.88); font-weight:800}
+.checkRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:16px;
+  background: rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.10);
+  height: fit-content;
+}
+.checkRow input{width:18px; height:18px}
 .select{
   border-radius:16px;
   padding:12px 44px 12px 14px;
@@ -200,6 +211,50 @@ code{
 }
 
 /* Active match */
+.timerCard{
+  border-radius:22px;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.10);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+}
+.timerTop{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.timerValue{
+  font-weight:1000;
+  font-size: clamp(2.2rem, 4vw + 1rem, 4.2rem);
+  line-height:1;
+}
+.timerActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.timerSet{
+  display:grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap:14px;
+  align-items:end;
+  margin-top:14px;
+}
+@media (max-width: 760px){
+  .timerSet{grid-template-columns: 1fr; align-items:stretch}
+}
+.textInput{
+  border-radius:16px;
+  padding:12px 12px;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.14);
+  color:var(--text);
+  font-weight:800;
+}
+.textInput:focus{outline:none}
+.textInput:focus-visible{box-shadow: 0 0 0 4px rgba(255,255,255,.12)}
 .scoreCard{
   border-radius:22px;
   padding:18px;
@@ -365,6 +420,7 @@ code{
 /* Team name clamp (max 2 lines) */
 .teamClamp{
   display:-webkit-box;
+  line-clamp:2;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;
@@ -410,6 +466,20 @@ code{
   position: relative;
   --frameW: min(92vw, 1200px);
 }
+.displayTimer{
+  position:absolute;
+  top: clamp(14px, 2.5vw, 32px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.32);
+  border:1px solid rgba(255,255,255,.16);
+  font-weight:1000;
+  letter-spacing:.08em;
+  font-size: clamp(1.1rem, 2.2vw, 2.0rem);
+  backdrop-filter: blur(10px);
+}
 .scoreboard::before,
 .scoreboard::after{
   content:"";
@@ -433,6 +503,7 @@ code{
   letter-spacing:.004em;
   text-transform:none;
   display:-webkit-box;
+  line-clamp:2;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;

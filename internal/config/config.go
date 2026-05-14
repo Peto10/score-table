@@ -9,7 +9,21 @@ import (
 )
 
 type Config struct {
-	Teams []Team `yaml:"teams"`
+	Timer TimerConfig `yaml:"timer"`
+	Teams []Team      `yaml:"teams"`
+}
+
+type TimerConfig struct {
+	DefaultMinutes int  `yaml:"default_minutes"`
+	DefaultSeconds int  `yaml:"default_seconds"`
+	ShowByDefault  bool `yaml:"show_by_default"`
+}
+
+func (t TimerConfig) DefaultDurationSeconds() int {
+	if t.DefaultMinutes < 0 || t.DefaultSeconds < 0 {
+		return 0
+	}
+	return t.DefaultMinutes*60 + t.DefaultSeconds
 }
 
 type Team struct {
@@ -50,6 +64,13 @@ func Load(path string) (*Config, error) {
 func (c *Config) Validate() error {
 	if len(c.Teams) < 2 {
 		return errors.New("config must contain at least 2 teams")
+	}
+
+	if c.Timer.DefaultMinutes < 0 {
+		return errors.New("timer.default_minutes must be >= 0")
+	}
+	if c.Timer.DefaultSeconds < 0 || c.Timer.DefaultSeconds > 59 {
+		return errors.New("timer.default_seconds must be between 0 and 59")
 	}
 
 	teamIDs := map[string]struct{}{}

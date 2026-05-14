@@ -146,6 +146,10 @@ func (h *Handlers) StartMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	now := time.Now()
+	defaultMs := int64(h.cfg.Timer.DefaultDurationSeconds()) * 1000
+	showTimer := h.cfg.Timer.ShowByDefault && defaultMs > 0
+
 	m := &match.ActiveMatch{
 		Team1: match.TeamSide{
 			TeamID:   t1.ID,
@@ -157,8 +161,15 @@ func (h *Handlers) StartMatch(w http.ResponseWriter, r *http.Request) {
 			TeamName: t2.Name,
 			Players:  toPlayerRefs(t2.Players),
 		},
-		StartedAt:       time.Now(),
+		StartedAt:       now,
 		GoalsByPlayerID: map[string]int{},
+		Timer: match.Timer{
+			Show:        showTimer,
+			DefaultMs:   defaultMs,
+			RemainingMs: defaultMs,
+			Running:     false,
+			UpdatedAt:   now,
+		},
 	}
 
 	h.active.Start(m)
@@ -174,6 +185,7 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setNoStore(w)
+	now := time.Now()
 	t1Score, t2Score := computeScores(m)
 	goalsForView := make(map[string]int, len(m.Team1.Players)+len(m.Team2.Players))
 	for _, p := range m.Team1.Players {
@@ -183,6 +195,8 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 		goalsForView[p.PlayerID] = m.GoalsByPlayerID[p.PlayerID]
 	}
 
+	timerSnap, _ := h.active.TimerSnapshotNow(now)
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = h.renderer.Render(w, "active_match.html", map[string]any{
 		"Team1":   m.Team1,
@@ -191,7 +205,64 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 		"Score2":  t2Score,
 		"Goals":   goalsForView,
 		"Started": m.StartedAt.UTC().Format("2006-01-02 15:04:05"),
+		"Timer": map[string]any{
+			"Supported":   m.Timer.DefaultMs > 0,
+			"Show":        timerSnap.Show,
+			"Running":     timerSnap.Running,
+			"RemainingMs": timerSnap.RemainingMs,
+			"DefaultMs":   timerSnap.DefaultMs,
+			"ServerMs":    now.UnixMilli(),
+			"Text":        formatMMSS(timerSnap.RemainingMs),
+			"DefText":     formatMMSS(timerSnap.DefaultMs),
+			"Min":         timerSnap.RemainingMs / 1000 / 60,
+			"Sec":         (timerSnap.RemainingMs / 1000) % 60,
+		},
 	})
+}
+
+func (h *Handlers) TimerToggle(w http.ResponseWriter, r *http.Request) {
+	_ = h.active.TimerToggleRun(time.Now())
+	h.broadcastSnapshot()
+	http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
+}
+
+func (h *Handlers) TimerReset(w http.ResponseWriter, r *http.Request) {
+	_ = h.active.TimerReset(time.Now())
+	h.broadcastSnapshot()
+	http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
+}
+
+func (h *Handlers) TimerSet(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
+		return
+	}
+	mins, _ := strconv.ParseInt(strings.TrimSpace(r.FormValue("minutes")), 10, 64)
+	secs, _ := strconv.ParseInt(strings.TrimSpace(r.FormValue("seconds")), 10, 64)
+	if mins < 0 {
+		mins = 0
+	}
+	if secs < 0 {
+		secs = 0
+	}
+	if secs > 59 {
+		secs = 59
+	}
+	remainingMs := (mins*60 + secs) * 1000
+	_ = h.active.TimerSet(time.Now(), remainingMs)
+	h.broadcastSnapshot()
+	http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
+}
+
+func (h *Handlers) TimerVisibility(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
+		return
+	}
+	show := strings.TrimSpace(r.FormValue("show")) == "1"
+	_ = h.active.TimerSetVisibility(time.Now(), show)
+	h.broadcastSnapshot()
+	http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
 }
 
 func (h *Handlers) PlayerInc(w http.ResponseWriter, r *http.Request) {
@@ -536,17 +607,48 @@ type snapshot struct {
 	Team2Name  string `json:"team2Name"`
 	Team1Score int    `json:"team1Score"`
 	Team2Score int    `json:"team2Score"`
+
+	ShowTimer        bool  `json:"showTimer"`
+	TimerRunning     bool  `json:"timerRunning"`
+	TimerRemainingMs int64 `json:"timerRemainingMs"`
+	TimerServerMs    int64 `json:"timerServerMs"`
 }
 
 func buildSnapshot(m *match.ActiveMatch) snapshot {
 	s1, s2 := computeScores(m)
-	return snapshot{
-		Active:     true,
-		Team1Name:  m.Team1.TeamName,
-		Team2Name:  m.Team2.TeamName,
-		Team1Score: s1,
-		Team2Score: s2,
+	now := time.Now()
+	rem := int64(0)
+	if m.Timer.Show && m.Timer.DefaultMs > 0 {
+		rem = m.Timer.RemainingMs
+		if m.Timer.Running {
+			elapsed := now.Sub(m.Timer.UpdatedAt).Milliseconds()
+			rem = m.Timer.RemainingMs - elapsed
+			if rem < 0 {
+				rem = 0
+			}
+		}
 	}
+	return snapshot{
+		Active:           true,
+		Team1Name:        m.Team1.TeamName,
+		Team2Name:        m.Team2.TeamName,
+		Team1Score:       s1,
+		Team2Score:       s2,
+		ShowTimer:        m.Timer.Show && m.Timer.DefaultMs > 0,
+		TimerRunning:     m.Timer.Show && m.Timer.Running,
+		TimerRemainingMs: rem,
+		TimerServerMs:    now.UnixMilli(),
+	}
+}
+
+func formatMMSS(ms int64) string {
+	if ms < 0 {
+		ms = 0
+	}
+	total := ms / 1000
+	min := total / 60
+	sec := total % 60
+	return fmt.Sprintf("%02d:%02d", min, sec)
 }
 
 func computeScores(m *match.ActiveMatch) (t1, t2 int) {

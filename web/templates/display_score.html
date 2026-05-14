@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Score Display</title>
-    <link rel="stylesheet" href="/static/app.css?v=23" />
-    <script defer src="/static/display_sse.js?v=4"></script>
+    <link rel="stylesheet" href="/static/app.css?v=24" />
+    <script defer src="/static/display_sse.js?v=5"></script>
   </head>
   <body class="displayBody">
     <div id="idleMessage" class="idleMessage {{if .HasActive}}isHidden{{end}}">
       <div class="idleTitle">No active match</div>
     </div>
     <div id="scoreboard" class="scoreboard {{if not .HasActive}}isHidden{{end}}">
+      <div id="displayTimer" class="displayTimer isHidden"></div>
       <div id="team1Name" class="teamName"></div>
       <div id="team1Score" class="scoreNumber">0</div>
       <div class="scoreDivider" aria-hidden="true"></div>
