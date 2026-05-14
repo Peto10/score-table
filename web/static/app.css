@@ -375,6 +375,29 @@ code{
   padding:0;
   overflow:hidden;
 }
+.idleMessage{
+  height:100vh;
+  width:100vw;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:12px;
+  padding: clamp(18px, 4vw, 56px);
+}
+.idleTitle{
+  font-weight:950;
+  letter-spacing:.02em;
+  font-size: clamp(2.8rem, 9vw, 7.2rem);
+  white-space: nowrap;
+  line-height: 1.02;
+}
+.idleHint{
+  color: rgba(238,242,255,.78);
+  font-weight:750;
+  font-size: clamp(.95rem, 1.2vw + .6rem, 1.3rem);
+}
 .scoreboard{
   height:100vh;
   width:100vw;
