@@ -1,3 +1,8 @@
+timer:
+  default_minutes: 0
+  default_seconds: 5
+  show_by_default: false
+
 teams:
   - id: team_red
     name: "Red Rockets"

@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Active Match</title>
-    <link rel="stylesheet" href="/static/app.css?v=20" />
-    <script defer src="/static/active_match.js?v=4"></script>
+    <link rel="stylesheet" href="/static/app.css?v=24" />
+    <script defer src="/static/active_match.js?v=5"></script>
   </head>
   <body class="panelBody">
     <main class="panelWrap">
@@ -20,6 +20,59 @@
           <a class="btn btnGhost" href="/display_score" target="_blank" rel="noreferrer">Open display</a>
         </nav>
       </header>
+
+      {{if (index .Timer "Supported")}}
+        <section class="timerCard">
+          <div class="timerTop">
+            <div>
+              <div class="panelKicker">Timer</div>
+              <div
+                id="timerValue"
+                class="timerValue"
+                data-show="{{if (index .Timer "Show")}}1{{else}}0{{end}}"
+                data-running="{{if (index .Timer "Running")}}1{{else}}0{{end}}"
+                data-remaining-ms="{{index .Timer "RemainingMs"}}"
+                data-server-ms="{{index .Timer "ServerMs"}}"
+              >
+                {{if (index .Timer "Show")}}{{index .Timer "Text"}}{{else}}00:00{{end}}
+              </div>
+              {{if (index .Timer "Show")}}
+                <div class="muted">Default: <code>{{index .Timer "DefText"}}</code></div>
+              {{end}}
+            </div>
+            <div class="timerActions">
+              <form method="post" action="/control_panel/active_match/timer/visibility">
+                <input type="hidden" name="show" value="{{if (index .Timer "Show")}}0{{else}}1{{end}}" />
+                <button class="btn btnGhost" type="submit">{{if (index .Timer "Show")}}Hide timer{{else}}Show timer{{end}}</button>
+              </form>
+              {{if (index .Timer "Show")}}
+                <form method="post" action="/control_panel/active_match/timer/toggle">
+                  <button class="btn btnPrimary" type="submit">{{if (index .Timer "Running")}}Pause{{else}}Start{{end}}</button>
+                </form>
+                <form method="post" action="/control_panel/active_match/timer/reset">
+                  <button class="btn btnGhost" type="submit">Reset</button>
+                </form>
+              {{end}}
+            </div>
+          </div>
+
+          {{if (index .Timer "Show")}}
+            <form class="timerSet" method="post" action="/control_panel/active_match/timer/set">
+              <label class="field">
+                <span class="labelText">Minutes</span>
+                <input class="textInput" name="minutes" type="number" inputmode="numeric" min="0" max="9999" step="1" value="{{index .Timer "Min"}}" />
+              </label>
+              <label class="field">
+                <span class="labelText">Seconds</span>
+                <input class="textInput" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="{{index .Timer "Sec"}}" />
+              </label>
+              <div class="actions">
+                <button class="btn btnSuccess" type="submit">Set</button>
+              </div>
+            </form>
+          {{end}}
+        </section>
+      {{end}}
 
       <section class="scoreCard">
         <div class="scoreInline">

@@ -75,4 +75,3 @@ func (s *EditStore) Dec(matchID int64, playerID string) bool {
 	s.edit.GoalsByPlayerID[playerID]--
 	return true
 }
-
