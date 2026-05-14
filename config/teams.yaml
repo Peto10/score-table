@@ -21,3 +21,115 @@ teams:
       - id: green_fran
         name: "Fran"
 
+  - id: team_yellow
+    name: "YELLOW YAKS"
+    players:
+      - id: yellow_gabe
+        name: "Gabe"
+      - id: yellow_hana
+        name: "Hana"
+
+  - id: team_orange
+    name: "ORANGE ORCAS"
+    players:
+      - id: orange_ivan
+        name: "Ivan"
+      - id: orange_jill
+        name: "Jill"
+
+  - id: team_purple
+    name: "PURPLE PHOENIX"
+    players:
+      - id: purple_kai
+        name: "Kai"
+      - id: purple_lena
+        name: "Lena"
+
+  - id: team_black
+    name: "BLACK BULLS"
+    players:
+      - id: black_milo
+        name: "Milo"
+      - id: black_nina
+        name: "Nina"
+
+  - id: team_white
+    name: "WHITE WOLVES"
+    players:
+      - id: white_otto
+        name: "Otto"
+      - id: white_pia
+        name: "Pia"
+
+  - id: team_silver
+    name: "SILVER SHARKS"
+    players:
+      - id: silver_quinn
+        name: "Quinn"
+      - id: silver_raya
+        name: "Raya"
+
+  - id: team_gold
+    name: "GOLDEN GOATS"
+    players:
+      - id: gold_sam
+        name: "Sam"
+      - id: gold_tara
+        name: "Tara"
+
+  - id: team_teal
+    name: "TEAL TIGERS"
+    players:
+      - id: teal_uma
+        name: "Uma"
+      - id: teal_viktor
+        name: "Viktor"
+
+  - id: team_pink
+    name: "PINK PANTHERS"
+    players:
+      - id: pink_wes
+        name: "Wes"
+      - id: pink_xena
+        name: "Xena"
+
+  - id: team_brown
+    name: "BROWN BEARS"
+    players:
+      - id: brown_yuri
+        name: "Yuri"
+      - id: brown_zara
+        name: "Zara"
+
+  - id: team_navy
+    name: "NAVY NARWHALS"
+    players:
+      - id: navy_aron
+        name: "Aron"
+      - id: navy_bela
+        name: "Bela"
+
+  - id: team_cyan
+    name: "CYAN COBRAS"
+    players:
+      - id: cyan_cody
+        name: "Cody"
+      - id: cyan_demi
+        name: "Demi"
+
+  - id: team_maroon
+    name: "MAROON MAMBAS"
+    players:
+      - id: maroon_elli
+        name: "Elli"
+      - id: maroon_finn
+        name: "Finn"
+
+  - id: team_lime
+    name: "LIME LYNX"
+    players:
+      - id: lime_gio
+        name: "Gio"
+      - id: lime_holly
+        name: "Holly"
+
