@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Player Stats</title>
-    <link rel="stylesheet" href="/static/app.css?v=8" />
+    <link rel="stylesheet" href="/static/app.css?v=15" />
     <script defer src="/static/stats.js?v=1"></script>
   </head>
   <body class="panelBody">
@@ -25,22 +25,22 @@
           <table class="statsTable">
             <thead>
               <tr>
-                <th class="stickyLeft"> </th>
+                <th class="stickyLeft">Player</th>
+                <th class="totalCol"><div class="totalHeader">TOTAL</div></th>
                 {{range .Cols}}
                   <th><div class="teamHeaderWrap">{{.Name}}</div></th>
                 {{end}}
-                <th>TOTAL</th>
               </tr>
             </thead>
             <tbody>
               {{range $row := .Rows}}
                 <tr>
                   <td class="stickyLeft">{{$row.PlayerName}}</td>
+                  <td class="numCell totalCol">{{if gt $row.Total 0}}{{$row.Total}}{{end}}</td>
                   {{range $col := $.Cols}}
                     {{ $n := index $row.ByOpp $col.ID }}
                     <td class="numCell">{{if gt $n 0}}{{$n}}{{end}}</td>
                   {{end}}
-                  <td class="numCell">{{if gt $row.Total 0}}{{$row.Total}}{{end}}</td>
                 </tr>
               {{end}}
             </tbody>

@@ -1,20 +1,20 @@
 teams:
   - id: team_red
-    name: "RED ROCKETS"
+    name: "Red Rockets"
     players:
       - id: red_alex
         name: "Alex"
       - id: red_ben
         name: "Ben"
   - id: team_blue
-    name: "BLUE BLIZZARD"
+    name: "Blue Blizzard"
     players:
       - id: blue_carl
         name: "Carl"
       - id: blue_dana
         name: "Dana"
   - id: team_green
-    name: "GREEN GRIFFINS (VERY LONG TEAM NAME EXAMPLE)"
+    name: "Green Griffins (Very Long Team Name Example)"
     players:
       - id: green_erin
         name: "Erin"
@@ -22,7 +22,7 @@ teams:
         name: "Fran"
 
   - id: team_yellow
-    name: "YELLOW YAKS"
+    name: "Yellow Yaks"
     players:
       - id: yellow_gabe
         name: "Gabe"
@@ -30,7 +30,7 @@ teams:
         name: "Hana"
 
   - id: team_orange
-    name: "ORANGE ORCAS"
+    name: "Orange Orcas"
     players:
       - id: orange_ivan
         name: "Ivan"
@@ -38,7 +38,7 @@ teams:
         name: "Jill"
 
   - id: team_purple
-    name: "PURPLE PHOENIX"
+    name: "Purple Phoenix"
     players:
       - id: purple_kai
         name: "Kai"
@@ -46,7 +46,7 @@ teams:
         name: "Lena"
 
   - id: team_black
-    name: "BLACK BULLS"
+    name: "Black Bulls"
     players:
       - id: black_milo
         name: "Milo"
@@ -54,7 +54,7 @@ teams:
         name: "Nina"
 
   - id: team_white
-    name: "WHITE WOLVES"
+    name: "White Wolves"
     players:
       - id: white_otto
         name: "Otto"
@@ -62,7 +62,7 @@ teams:
         name: "Pia"
 
   - id: team_silver
-    name: "SILVER SHARKS"
+    name: "Silver Sharks"
     players:
       - id: silver_quinn
         name: "Quinn"
@@ -70,7 +70,7 @@ teams:
         name: "Raya"
 
   - id: team_gold
-    name: "GOLDEN GOATS"
+    name: "Golden Goats"
     players:
       - id: gold_sam
         name: "Sam"
@@ -78,7 +78,7 @@ teams:
         name: "Tara"
 
   - id: team_teal
-    name: "TEAL TIGERS"
+    name: "Teal Tigers"
     players:
       - id: teal_uma
         name: "Uma"
@@ -86,7 +86,7 @@ teams:
         name: "Viktor"
 
   - id: team_pink
-    name: "PINK PANTHERS"
+    name: "Pink Panthers"
     players:
       - id: pink_wes
         name: "Wes"
@@ -94,7 +94,7 @@ teams:
         name: "Xena"
 
   - id: team_brown
-    name: "BROWN BEARS"
+    name: "Brown Bears"
     players:
       - id: brown_yuri
         name: "Yuri"
@@ -102,7 +102,7 @@ teams:
         name: "Zara"
 
   - id: team_navy
-    name: "NAVY NARWHALS"
+    name: "Navy Narwhals"
     players:
       - id: navy_aron
         name: "Aron"
@@ -110,7 +110,7 @@ teams:
         name: "Bela"
 
   - id: team_cyan
-    name: "CYAN COBRAS"
+    name: "Cyan Cobras"
     players:
       - id: cyan_cody
         name: "Cody"
@@ -118,7 +118,7 @@ teams:
         name: "Demi"
 
   - id: team_maroon
-    name: "MAROON MAMBAS"
+    name: "Maroon Mambas"
     players:
       - id: maroon_elli
         name: "Elli"
@@ -126,7 +126,7 @@ teams:
         name: "Finn"
 
   - id: team_lime
-    name: "LIME LYNX"
+    name: "Lime Lynx"
     players:
       - id: lime_gio
         name: "Gio"
