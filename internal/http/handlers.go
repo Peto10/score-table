@@ -114,6 +114,14 @@ func (h *Handlers) ControlPanel(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handlers) TeamsOverview(w http.ResponseWriter, r *http.Request) {
+	setNoStore(w)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = h.renderer.Render(w, "teams.html", map[string]any{
+		"Teams": h.cfg.Teams,
+	})
+}
+
 func (h *Handlers) StartMatch(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Redirect(w, r, "/control_panel?err=invalid+form", http.StatusSeeOther)
