@@ -229,6 +229,12 @@ code{
 }
 .statsTable tbody tr:hover td{background: rgba(255,255,255,.04)}
 .numCell{text-align:center; font-weight:900}
+.statsTable .isColHover{
+  background: rgba(255,255,255,.06);
+}
+.statsTable tbody tr:hover td.isColHover{
+  background: rgba(255,255,255,.09);
+}
 .stickyLeft{
   position:sticky;
   left:0;
