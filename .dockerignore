@@ -1,0 +1,7 @@
+.gopath
+.gomodcache
+data
+.git
+.cursor
+**/*.db
+

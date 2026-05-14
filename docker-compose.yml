@@ -1,0 +1,14 @@
+services:
+  floorball-score-table:
+    build: .
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    environment:
+      ADDR: ":8080"
+      DB_PATH: "/data/app.db"
+      CONFIG_PATH: "/config/teams.yaml"
+    volumes:
+      - ./data:/data
+      - ./config/teams.yaml:/config/teams.yaml:ro
+    restart: unless-stopped
+

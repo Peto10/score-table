@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Score Display</title>
+    <link rel="stylesheet" href="/static/app.css" />
+    <script defer src="/static/display_sse.js"></script>
+  </head>
+  <body class="displayBody">
+    <div id="scoreboard" class="scoreboard {{if not .HasActive}}isHidden{{end}}">
+      <div id="team1Name" class="teamName"></div>
+      <div id="team1Score" class="scoreNumber">0</div>
+      <div class="scoreDivider" aria-hidden="true"></div>
+      <div id="team2Score" class="scoreNumber">0</div>
+      <div id="team2Name" class="teamName"></div>
+    </div>
+  </body>
+</html>
+

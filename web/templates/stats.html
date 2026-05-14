@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Player Stats</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body class="panelBody">
+    <main class="panelWrap">
+      <header class="panelHeader">
+        <div>
+          <div class="panelKicker">Control panel</div>
+          <h1 class="panelTitle">Players stats</h1>
+          <div class="muted">Cells are goals scored against that team (blank means 0).</div>
+        </div>
+        <nav class="panelNav">
+          <a class="btn btnGhost" href="/control_panel">Back</a>
+        </nav>
+      </header>
+
+      <section class="card">
+        <div class="tableWrap">
+          <table class="statsTable">
+            <thead>
+              <tr>
+                <th class="stickyLeft">Player</th>
+                {{range .Cols}}
+                  <th class="teamClamp">{{.Name}}</th>
+                {{end}}
+                <th>TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{range $row := .Rows}}
+                <tr>
+                  <td class="stickyLeft">{{$row.PlayerName}}</td>
+                  {{range $col := $.Cols}}
+                    {{ $n := index $row.ByOpp $col.ID }}
+                    <td class="numCell">{{if gt $n 0}}{{$n}}{{end}}</td>
+                  {{end}}
+                  <td class="numCell">{{if gt $row.Total 0}}{{$row.Total}}{{end}}</td>
+                </tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

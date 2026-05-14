@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Control Panel</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body class="panelBody">
+    <main class="panelWrap">
+      <header class="panelHeader">
+        <div>
+          <div class="panelKicker">Control panel</div>
+          <h1 class="panelTitle">Choose 2 teams that play</h1>
+        </div>
+        <nav class="panelNav">
+          <a class="btn btnGhost" href="/control_panel/history">History</a>
+          <a class="btn btnGhost" href="/control_panel/stats">Players stats</a>
+          {{if .HasActive}}
+            <a class="btn btnPrimary" href="{{.ActiveRoute}}">Active match</a>
+          {{end}}
+        </nav>
+      </header>
+
+      {{if .Error}}
+        <div class="alert alertError">{{.Error}}</div>
+      {{end}}
+
+      <section class="card">
+        <form class="teamPick" method="post" action="/control_panel/start_match">
+          <label class="field">
+            <span class="labelText">Team 1</span>
+            <select name="team1" required class="select">
+              <option value="" selected disabled>Choose team</option>
+              {{range .Teams}}
+                <option value="{{.ID}}">{{.Name}}</option>
+              {{end}}
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="labelText">Team 2</span>
+            <select name="team2" required class="select">
+              <option value="" selected disabled>Choose team</option>
+              {{range .Teams}}
+                <option value="{{.ID}}">{{.Name}}</option>
+              {{end}}
+            </select>
+          </label>
+
+          <div class="actions">
+            <button class="btn btnSuccess btnBig" type="submit">Start match</button>
+          </div>
+        </form>
+      </section>
+
+      <footer class="panelFooter">
+        <div class="muted">Tip: open <code>/display_score</code> on the projector and keep this tab for control.</div>
+      </footer>
+    </main>
+  </body>
+</html>
+

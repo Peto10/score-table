@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Match History</title>
+    <link rel="stylesheet" href="/static/app.css" />
+    <script>
+      window.addEventListener("click", (e) => {
+        const btn = e.target?.closest?.("[data-confirm]");
+        if (!btn) return;
+        const msg = btn.getAttribute("data-confirm") || "Are you sure?";
+        if (!confirm(msg)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    </script>
+  </head>
+  <body class="panelBody">
+    <main class="panelWrap">
+      <header class="panelHeader">
+        <div>
+          <div class="panelKicker">Control panel</div>
+          <h1 class="panelTitle">History</h1>
+        </div>
+        <nav class="panelNav">
+          <a class="btn btnGhost" href="/control_panel">Back</a>
+        </nav>
+      </header>
+
+      <section class="card">
+        {{if not .Matches}}
+          <div class="muted">No saved matches yet.</div>
+        {{end}}
+        <div class="historyList">
+          {{range .Matches}}
+            <div class="historyItem">
+              <div class="historyMain">
+                <div class="historyTeams teamClamp">{{.Team1Name}} vs {{.Team2Name}}</div>
+                <div class="historyScore">{{.Team1Score}} : {{.Team2Score}}</div>
+                <div class="historyMeta muted">
+                  <span>Ended: <code>{{.EndedAt}}</code></span>
+                </div>
+              </div>
+              <div class="historyActions">
+                <form method="post" action="/control_panel/history/{{.ID}}/delete">
+                  <button class="btn btnDanger" type="submit" data-confirm="Delete match permanently?">Delete</button>
+                </form>
+              </div>
+            </div>
+          {{end}}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

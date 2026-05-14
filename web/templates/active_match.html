@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Active Match</title>
+    <link rel="stylesheet" href="/static/app.css" />
+    <script defer src="/static/active_match.js"></script>
+  </head>
+  <body class="panelBody">
+    <main class="panelWrap">
+      <header class="panelHeader">
+        <div>
+          <div class="panelKicker">Active match</div>
+          <h1 class="panelTitle">{{.Team1.TeamName}} vs {{.Team2.TeamName}}</h1>
+          <div class="muted">Started: <code>{{.Started}}</code></div>
+        </div>
+        <nav class="panelNav">
+          <a class="btn btnGhost" id="backLink" href="/control_panel">Back</a>
+          <a class="btn btnGhost" href="/display_score" target="_blank" rel="noreferrer">Open display</a>
+        </nav>
+      </header>
+
+      <section class="scoreCard">
+        <div class="scoreInline">
+          <div class="scoreInlineTeam teamClamp">{{.Team1.TeamName}}</div>
+          <div class="scoreInlineNum">{{.Score1}}</div>
+          <div class="scoreInlineDash">:</div>
+          <div class="scoreInlineNum">{{.Score2}}</div>
+          <div class="scoreInlineTeam teamClamp">{{.Team2.TeamName}}</div>
+        </div>
+      </section>
+
+      <section class="twoCol">
+        <div class="card">
+          <h2 class="sectionTitle teamClamp">{{.Team1.TeamName}}</h2>
+          <div class="playerList">
+            {{range .Team1.Players}}
+              <div class="playerRow">
+                <div class="playerName">{{.PlayerName}}</div>
+                <div class="playerControls">
+                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/dec">
+                    <button class="btn btnDanger btnIcon" type="submit" aria-label="Minus one">-</button>
+                  </form>
+                  <div class="playerGoals">{{index $.Goals .PlayerID}}</div>
+                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/inc">
+                    <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one">+</button>
+                  </form>
+                </div>
+              </div>
+            {{end}}
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="sectionTitle teamClamp">{{.Team2.TeamName}}</h2>
+          <div class="playerList">
+            {{range .Team2.Players}}
+              <div class="playerRow">
+                <div class="playerName">{{.PlayerName}}</div>
+                <div class="playerControls">
+                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/dec">
+                    <button class="btn btnDanger btnIcon" type="submit" aria-label="Minus one">-</button>
+                  </form>
+                  <div class="playerGoals">{{index $.Goals .PlayerID}}</div>
+                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/inc">
+                    <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one">+</button>
+                  </form>
+                </div>
+              </div>
+            {{end}}
+          </div>
+        </div>
+      </section>
+
+      <section class="actionsBar">
+        <form method="post" action="/control_panel/active_match/save">
+          <button class="btn btnSuccess btnBig" id="saveBtn" type="submit">Save match</button>
+        </form>
+        <form method="post" action="/control_panel/active_match/discard">
+          <button class="btn btnDanger btnBig" id="discardBtn" type="submit" data-confirm="Discard this match? It will NOT be saved.">Discard match</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>
+

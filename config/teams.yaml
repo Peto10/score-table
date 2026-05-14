@@ -1,0 +1,23 @@
+teams:
+  - id: team_red
+    name: "RED ROCKETS"
+    players:
+      - id: red_alex
+        name: "Alex"
+      - id: red_ben
+        name: "Ben"
+  - id: team_blue
+    name: "BLUE BLIZZARD"
+    players:
+      - id: blue_carl
+        name: "Carl"
+      - id: blue_dana
+        name: "Dana"
+  - id: team_green
+    name: "GREEN GRIFFINS (VERY LONG TEAM NAME EXAMPLE)"
+    players:
+      - id: green_erin
+        name: "Erin"
+      - id: green_fran
+        name: "Fran"
+
