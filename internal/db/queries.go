@@ -29,8 +29,8 @@ INSERT INTO matches (
 		p.Team1ID, p.Team1Name,
 		p.Team2ID, p.Team2Name,
 		p.Team1Score, p.Team2Score,
-		p.StartedAt.Format(time.RFC3339Nano),
-		p.EndedAt.Format(time.RFC3339Nano),
+		p.StartedAt.UTC().Format("2006-01-02 15:04:05"),
+		p.EndedAt.UTC().Format("2006-01-02 15:04:05"),
 	)
 	if err != nil {
 		return 0, err

@@ -1,6 +1,4 @@
 (() => {
-  let suppressLeaveWarning = false;
-
   const confirmButtons = () => {
     document.addEventListener("click", (e) => {
       const btn = e.target?.closest?.("[data-confirm]");
@@ -9,19 +7,7 @@
       if (!confirm(msg)) {
         e.preventDefault();
         e.stopPropagation();
-      } else {
-        suppressLeaveWarning = true;
       }
-    });
-  };
-
-  const warnOnLeave = () => {
-    window.addEventListener("beforeunload", (e) => {
-      if (suppressLeaveWarning) return;
-      // Most browsers ignore custom text; returning a string still triggers the warning.
-      e.preventDefault();
-      e.returnValue = "If you leave now, the match will not be saved.";
-      return e.returnValue;
     });
   };
 
@@ -43,7 +29,6 @@
         }
         return;
       }
-      suppressLeaveWarning = true;
       fetch("/control_panel/active_match/discard", { method: "POST" })
         .catch(() => {})
         .finally(() => {
@@ -60,7 +45,6 @@
         e.preventDefault();
         return;
       }
-      suppressLeaveWarning = true;
       // Best effort discard before navigating.
       fetch("/control_panel/active_match/discard", { method: "POST" })
         .catch(() => {})
@@ -71,15 +55,7 @@
     });
   }
 
-  const saveBtn = document.getElementById("saveBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      suppressLeaveWarning = true;
-    });
-  }
-
   confirmButtons();
-  warnOnLeave();
   interceptBrowserBack();
 })();
 

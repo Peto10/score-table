@@ -48,7 +48,12 @@ func NewHandlers(d HandlersDeps) *Handlers {
 	}
 }
 
+func setNoStore(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store, max-age=0")
+}
+
 func (h *Handlers) DisplayScore(w http.ResponseWriter, r *http.Request) {
+	setNoStore(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = h.renderer.Render(w, "display_score.html", map[string]any{
 		"HasActive": h.active.Get() != nil,
@@ -95,6 +100,7 @@ func (h *Handlers) ScoreEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ControlPanel(w http.ResponseWriter, r *http.Request) {
+	setNoStore(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	errMsg := strings.TrimSpace(r.URL.Query().Get("err"))
 	_ = h.renderer.Render(w, "control_panel.html", map[string]any{
@@ -156,6 +162,7 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	setNoStore(w)
 	t1Score, t2Score := computeScores(m)
 	goalsForView := make(map[string]int, len(m.Team1.Players)+len(m.Team2.Players))
 	for _, p := range m.Team1.Players {
@@ -172,7 +179,7 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 		"Score1":  t1Score,
 		"Score2":  t2Score,
 		"Goals":   goalsForView,
-		"Started": m.StartedAt.Format(time.RFC3339),
+		"Started": m.StartedAt.UTC().Format("2006-01-02 15:04:05"),
 	})
 }
 
@@ -256,10 +263,42 @@ func (h *Handlers) History(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	setNoStore(w)
+	type matchView struct {
+		db.MatchRow
+		StartedAt string
+		EndedAt   string
+	}
+	views := make([]matchView, 0, len(matches))
+	for _, m := range matches {
+		views = append(views, matchView{
+			MatchRow:  m,
+			StartedAt: formatMatchTime(m.StartedAt),
+			EndedAt:   formatMatchTime(m.EndedAt),
+		})
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = h.renderer.Render(w, "history.html", map[string]any{
-		"Matches": matches,
+		"Matches": views,
 	})
+}
+
+func formatMatchTime(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return t.UTC().Format("2006-01-02 15:04:05")
+	}
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t.UTC().Format("2006-01-02 15:04:05")
+	}
+	if t, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.UTC); err == nil {
+		return t.UTC().Format("2006-01-02 15:04:05")
+	}
+	return s
 }
 
 func (h *Handlers) DeleteMatch(w http.ResponseWriter, r *http.Request) {
@@ -278,6 +317,7 @@ func (h *Handlers) Stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	setNoStore(w)
 	type col struct {
 		ID   string
 		Name string
