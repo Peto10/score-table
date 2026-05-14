@@ -77,6 +77,7 @@ func main() {
 
 	r.Route("/control_panel", func(r chi.Router) {
 		r.Get("/", h.ControlPanel)
+		r.Get("/teams", h.TeamsOverview)
 		r.Post("/start_match", h.StartMatch)
 
 		r.Get("/active_match", h.ActiveMatch)

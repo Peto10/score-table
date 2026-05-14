@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teams</title>
+    <link rel="stylesheet" href="/static/app.css?v=19" />
+  </head>
+  <body class="panelBody">
+    <main class="panelWrap">
+      <header class="panelHeader">
+        <div>
+          <div class="panelKicker">Control panel</div>
+          <h1 class="panelTitle">Teams overview</h1>
+          <div class="muted">All teams and their members from the config.</div>
+        </div>
+        <nav class="panelNav">
+          <a class="btn btnGhost" href="/control_panel">Back</a>
+        </nav>
+      </header>
+
+      <section class="teamsGrid">
+        {{range .Teams}}
+          <article class="teamCard">
+            <header class="teamCardHeader">
+              <div class="teamCardTitle teamClamp">{{.Name}}</div>
+              <div class="teamCardMeta muted">{{len .Players}} players</div>
+            </header>
+            <div class="teamPlayers">
+              {{range .Players}}
+                <div class="playerChip">{{.Name}}</div>
+              {{end}}
+            </div>
+          </article>
+        {{end}}
+      </section>
+    </main>
+  </body>
+</html>
+

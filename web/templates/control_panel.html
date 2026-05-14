@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Control Panel</title>
-    <link rel="stylesheet" href="/static/app.css?v=17" />
+    <link rel="stylesheet" href="/static/app.css?v=18" />
   </head>
   <body class="panelBody">
     <main class="panelWrap">
@@ -16,6 +16,7 @@
         <nav class="panelNav">
           <a class="btn btnGhost" href="/control_panel/history">History</a>
           <a class="btn btnGhost" href="/control_panel/stats">Players stats</a>
+          <a class="btn btnGhost" href="/control_panel/teams">Teams overview</a>
           {{if .HasActive}}
             <a class="btn btnPrimary" href="{{.ActiveRoute}}">Active match</a>
           {{end}}

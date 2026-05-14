@@ -128,6 +128,58 @@ code{
 
 .panelFooter{padding:6px 2px}
 
+/* Teams overview */
+.teamsGrid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:14px;
+}
+@media (max-width: 980px){ .teamsGrid{grid-template-columns: repeat(2, minmax(0, 1fr));} }
+@media (max-width: 680px){ .teamsGrid{grid-template-columns: 1fr;} }
+
+.teamCard{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius:22px;
+  padding:16px;
+  box-shadow: var(--shadow);
+}
+.teamCardHeader{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+  flex-wrap:nowrap;
+}
+.teamCardTitle{
+  font-weight:950;
+  letter-spacing:.01em;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.teamCardMeta{
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.teamPlayers{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.playerChip{
+  padding:8px 10px;
+  border-radius:999px;
+  background: rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.10);
+  font-weight:850;
+  transition: transform .12s ease, background .12s ease;
+}
+.playerChip:hover{
+  transform: scale(1.03);
+  background: rgba(255,255,255,.06);
+}
+
 /* Active match */
 .scoreCard{
   border-radius:22px;
