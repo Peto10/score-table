@@ -102,6 +102,7 @@ code{
 
 .alert{border-radius:18px; padding:12px 14px; border:1px solid rgba(255,255,255,.14)}
 .alertError{background: rgba(255,77,77,.10); border-color: rgba(255,77,77,.30)}
+.alertWarn{background: rgba(255,196,77,.10); border-color: rgba(255,196,77,.30)}
 
 .teamPick{
   display:grid;
@@ -155,6 +156,7 @@ code{
   color: rgba(167,176,195,.85);
 }
 .actions{display:flex; justify-content:flex-end}
+.timerSetSettings .actions{justify-content:flex-start}
 
 .panelFooter{padding:6px 2px}
 
@@ -267,6 +269,19 @@ code{
   gap:14px;
   align-items:center;
 }
+.scoreInlineMid{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.btnMini{
+  padding: 8px 10px;
+  font-size: .85rem;
+  border-radius: 14px;
+  line-height: 1;
+}
 .scoreInlineTeam{
   font-weight:900;
   font-size:clamp(.95rem, 1.1vw + .8rem, 1.35rem);
@@ -324,6 +339,33 @@ code{
 .historyMain{display:flex; flex-direction:column; gap:6px}
 .historyActions{display:flex; align-items:center}
 .historyActions{gap:10px}
+
+/* Modal */
+.modal{
+  border:none;
+  padding:0;
+  background: transparent;
+  max-width: min(560px, 96vw);
+  width: 96vw;
+}
+.modal::backdrop{
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+}
+.modalCard{
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius:22px;
+  padding:18px;
+  box-shadow: var(--shadow);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.modalHeader{display:flex; align-items:center; justify-content:space-between}
+.modalTitle{font-weight:950; font-size:1.2rem}
+.modalBody{display:flex; flex-direction:column; gap:12px}
+.modalFooter{display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap}
 
 /* Stats table */
 .tableWrap{overflow:auto; border-radius:18px; border:1px solid rgba(255,255,255,.10)}
@@ -457,43 +499,82 @@ code{
 .scoreboard{
   height:100vh;
   width:100vw;
-  display:grid;
-  grid-template-rows: 1fr 1.1fr .12fr 1.1fr 1fr;
-  gap:0;
-  align-items:center;
-  justify-items:center;
   padding: clamp(18px, 4vw, 56px);
   position: relative;
   --frameW: min(92vw, 1200px);
+}
+.displayFrame{
+  width: var(--frameW);
+  height: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  column-gap: clamp(24px, 6vw, 140px);
+  position: relative;
+}
+.displayFrame::after{
+  content:"";
+  position:absolute;
+  left: 50%;
+  top: 10%;
+  bottom: 10%;
+  width: clamp(2px, .28vw, 6px);
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
+  opacity: .28;
+  pointer-events: none;
+}
+.displaySide{
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(10px, 3vh, 40px);
+  min-width: 0;
+}
+.displayLeft{
+  align-items: center;
+  text-align: center;
+}
+.displayRight{
+  align-items: center;
+  text-align: center;
+}
+.displayFrame .teamName{
+  width: 100%;
+  text-align: inherit;
+  /* Display page: allow wrapping; JS will auto-fit to <= 3 lines. */
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  -webkit-box-orient: unset;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: manual;
+  line-height: 1.05;
+  font-size: clamp(1.6rem, 4.6vw, 4.4rem);
+}
+.displayFrame .scoreNumber{
+  font-size: clamp(5.0rem, 15vw, 13.5rem);
 }
 .displayTimer{
   position:absolute;
   top: clamp(14px, 2.5vw, 32px);
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 14px;
+  padding: clamp(12px, 2.2vw, 22px) clamp(18px, 3vw, 34px);
   border-radius: 999px;
-  background: rgba(0,0,0,.32);
-  border:1px solid rgba(255,255,255,.16);
-  font-weight:1000;
-  letter-spacing:.08em;
-  font-size: clamp(1.1rem, 2.2vw, 2.0rem);
+  background: rgba(0,0,0,.44);
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 18px 70px rgba(0,0,0,.35);
+  font-weight: 1000;
+  letter-spacing: .08em;
+  font-size: clamp(2.4rem, 7.4vw, 6.4rem);
   backdrop-filter: blur(10px);
+  z-index: 3;
 }
-.scoreboard::before,
-.scoreboard::after{
-  content:"";
-  position:absolute;
-  top: clamp(18px, 4vw, 56px);
-  bottom: clamp(18px, 4vw, 56px);
-  width: clamp(2px, .25vw, 4px);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
-  opacity:.55;
-  pointer-events:none;
-}
-.scoreboard::before{ left: calc((100% - var(--frameW)) / 2); }
-.scoreboard::after{ right: calc((100% - var(--frameW)) / 2); }
 .teamName{
   width: min(92vw, 1100px);
   text-align:center;

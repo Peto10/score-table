@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Control Panel</title>
-    <link rel="stylesheet" href="/static/app.css?v=24" />
+    <link rel="stylesheet" href="/static/app.css?v=31" />
   </head>
   <body class="panelBody">
     <main class="panelWrap">
@@ -17,6 +17,7 @@
           <a class="btn btnGhost" href="/control_panel/history">History</a>
           <a class="btn btnGhost" href="/control_panel/stats">Players stats</a>
           <a class="btn btnGhost" href="/control_panel/teams">Teams overview</a>
+          <a class="btn btnGhost" href="/control_panel/settings">Settings</a>
           {{if .HasActive}}
             <a class="btn btnPrimary" href="{{.ActiveRoute}}">Active match</a>
           {{end}}
@@ -28,6 +29,9 @@
       {{end}}
 
       <section class="card">
+        {{if not .CanStart}}
+          <div class="alert alertWarn">Add at least 2 teams in <a href="/control_panel/teams">Teams overview</a> to start a match.</div>
+        {{end}}
         <form class="teamPick" method="post" action="/control_panel/start_match">
           <label class="field">
             <span class="labelText">Team 1</span>
@@ -50,7 +54,7 @@
           </label>
 
           <div class="actions">
-            <button class="btn btnSuccess btnBig" type="submit">Start match</button>
+            <button class="btn btnSuccess btnBig" type="submit" {{if not .CanStart}}disabled{{end}}>Start match</button>
           </div>
         </form>
       </section>
