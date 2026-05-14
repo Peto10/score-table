@@ -46,6 +46,7 @@ func main() {
 	}
 
 	active := match.NewActiveMatchStore()
+	edit := match.NewEditStore()
 	hub := apphttp.NewScoreHub()
 
 	h := apphttp.NewHandlers(apphttp.HandlersDeps{
@@ -53,6 +54,7 @@ func main() {
 		DB:       sqlDB,
 		Renderer: renderer,
 		Active:   active,
+		Edit:     edit,
 		Hub:      hub,
 	})
 
@@ -85,6 +87,11 @@ func main() {
 		r.Post("/active_match/discard_beacon", h.DiscardMatchBeacon)
 
 		r.Get("/history", h.History)
+		r.Get("/history/{matchID}/edit", h.EditMatch)
+		r.Post("/history/{matchID}/edit/player/{playerID}/inc", h.EditPlayerInc)
+		r.Post("/history/{matchID}/edit/player/{playerID}/dec", h.EditPlayerDec)
+		r.Post("/history/{matchID}/edit/save", h.SaveMatchEdits)
+		r.Post("/history/{matchID}/edit/discard", h.DiscardMatchEdits)
 		r.Post("/history/{matchID}/delete", h.DeleteMatch)
 
 		r.Get("/stats", h.Stats)

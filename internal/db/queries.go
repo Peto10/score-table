@@ -105,7 +105,7 @@ SELECT
   team1_score, team2_score,
   started_at, ended_at
 FROM matches
-ORDER BY datetime(replace(replace(ended_at, 'T', ' '), 'Z', '')) DESC, id DESC
+ORDER BY datetime(replace(replace(ended_at, 'T', ' '), 'Z', '')) ASC, id ASC
 `)
 	if err != nil {
 		return nil, err
@@ -132,6 +132,155 @@ ORDER BY datetime(replace(replace(ended_at, 'T', ' '), 'Z', '')) DESC, id DESC
 func DeleteMatch(ctx context.Context, db *sql.DB, matchID int64) error {
 	_, err := db.ExecContext(ctx, `DELETE FROM matches WHERE id = ?`, matchID)
 	return err
+}
+
+func GetMatch(ctx context.Context, db *sql.DB, matchID int64) (MatchRow, error) {
+	var m MatchRow
+	err := db.QueryRowContext(ctx, `
+SELECT
+  id,
+  team1_id, team1_name,
+  team2_id, team2_name,
+  team1_score, team2_score,
+  started_at, ended_at
+FROM matches
+WHERE id = ?
+`, matchID).Scan(
+		&m.ID,
+		&m.Team1ID, &m.Team1Name,
+		&m.Team2ID, &m.Team2Name,
+		&m.Team1Score, &m.Team2Score,
+		&m.StartedAt, &m.EndedAt,
+	)
+	return m, err
+}
+
+func UpdateMatchScores(ctx context.Context, db *sql.DB, matchID int64, team1Score, team2Score int) error {
+	_, err := db.ExecContext(ctx, `
+UPDATE matches
+SET team1_score = ?, team2_score = ?
+WHERE id = ?
+`, team1Score, team2Score, matchID)
+	return err
+}
+
+func ListMatchPlayerGoals(ctx context.Context, db *sql.DB, matchID int64) ([]PlayerGoalRow, error) {
+	rows, err := db.QueryContext(ctx, `
+SELECT
+  player_id, player_name,
+  scoring_team_id, scoring_team_name,
+  opponent_team_id, opponent_team_name,
+  goals
+FROM match_player_goals
+WHERE match_id = ?
+`, matchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []PlayerGoalRow
+	for rows.Next() {
+		var r PlayerGoalRow
+		if err := rows.Scan(
+			&r.PlayerID, &r.PlayerName,
+			&r.ScoringTeamID, &r.ScoringTeamName,
+			&r.OpponentTeamID, &r.OpponentTeamName,
+			&r.Goals,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+func ReplaceMatchPlayerGoals(ctx context.Context, db *sql.DB, matchID int64, rows []PlayerGoalRow) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM match_player_goals WHERE match_id = ?`, matchID); err != nil {
+		return err
+	}
+
+	stmt, err := tx.PrepareContext(ctx, `
+INSERT INTO match_player_goals (
+  match_id,
+  player_id, player_name,
+  scoring_team_id, scoring_team_name,
+  opponent_team_id, opponent_team_name,
+  goals
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, r := range rows {
+		if _, err := stmt.ExecContext(ctx,
+			matchID,
+			r.PlayerID, r.PlayerName,
+			r.ScoringTeamID, r.ScoringTeamName,
+			r.OpponentTeamID, r.OpponentTeamName,
+			r.Goals,
+		); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func UpdateMatchScoresAndGoals(ctx context.Context, db *sql.DB, matchID int64, team1Score, team2Score int, rows []PlayerGoalRow) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.ExecContext(ctx, `
+UPDATE matches
+SET team1_score = ?, team2_score = ?
+WHERE id = ?
+`, team1Score, team2Score, matchID); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM match_player_goals WHERE match_id = ?`, matchID); err != nil {
+		return err
+	}
+
+	stmt, err := tx.PrepareContext(ctx, `
+INSERT INTO match_player_goals (
+  match_id,
+  player_id, player_name,
+  scoring_team_id, scoring_team_name,
+  opponent_team_id, opponent_team_name,
+  goals
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, r := range rows {
+		if _, err := stmt.ExecContext(ctx,
+			matchID,
+			r.PlayerID, r.PlayerName,
+			r.ScoringTeamID, r.ScoringTeamName,
+			r.OpponentTeamID, r.OpponentTeamName,
+			r.Goals,
+		); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // PlayerStats returns goals grouped by (player_id, opponent_team_id) and total per player.

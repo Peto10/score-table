@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Match History</title>
-    <link rel="stylesheet" href="/static/app.css?v=15" />
+    <link rel="stylesheet" href="/static/app.css?v=17" />
     <script>
       window.addEventListener("click", (e) => {
         const btn = e.target?.closest?.("[data-confirm]");
@@ -44,6 +44,7 @@
                 </div>
               </div>
               <div class="historyActions">
+                <a class="btn btnGhost" href="/control_panel/history/{{.ID}}/edit" title="Edit match" aria-label="Edit match">Edit</a>
                 <form method="post" action="/control_panel/history/{{.ID}}/delete">
                   <button class="btn btnDanger" type="submit" data-confirm="Delete match permanently?">Delete</button>
                 </form>
