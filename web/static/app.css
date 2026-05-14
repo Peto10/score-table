@@ -202,7 +202,20 @@ code{
 .statsTable th, .statsTable td{
   padding:12px 12px;
   border-bottom:1px solid rgba(255,255,255,.08);
+  border-right:1px solid rgba(255,255,255,.10);
   white-space:nowrap;
+}
+.statsTable th:last-child, .statsTable td:last-child{border-right:none}
+.statsTable thead th{white-space: normal}
+.teamHeaderWrap{
+  display:block;
+  max-width: clamp(120px, 14vw, 180px);
+  overflow-wrap:anywhere;
+  word-break: break-word;
+  hyphens:auto;
+  line-height:1.1;
+  margin: 0 auto;
+  text-align:center;
 }
 .statsTable thead th{
   position:sticky;
@@ -211,6 +224,8 @@ code{
   backdrop-filter: blur(10px);
   z-index:2;
   font-weight:950;
+  text-align:center;
+  padding:10px 8px;
 }
 .statsTable tbody tr:hover td{background: rgba(255,255,255,.04)}
 .numCell{text-align:center; font-weight:900}
@@ -219,6 +234,7 @@ code{
   left:0;
   background: rgba(11,13,16,.90);
   z-index:3;
+  text-align:left !important;
 }
 .statsTable tbody .stickyLeft{z-index:1}
 
@@ -244,7 +260,23 @@ code{
   align-items:center;
   justify-items:center;
   padding: clamp(18px, 4vw, 56px);
+  position: relative;
+  --frameW: min(92vw, 1200px);
 }
+.scoreboard::before,
+.scoreboard::after{
+  content:"";
+  position:absolute;
+  top: clamp(18px, 4vw, 56px);
+  bottom: clamp(18px, 4vw, 56px);
+  width: clamp(2px, .25vw, 4px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
+  opacity:.55;
+  pointer-events:none;
+}
+.scoreboard::before{ left: calc((100% - var(--frameW)) / 2); }
+.scoreboard::after{ right: calc((100% - var(--frameW)) / 2); }
 .teamName{
   width: min(92vw, 1100px);
   text-align:center;

@@ -347,6 +347,9 @@ func (h *Handlers) Stats(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Total != rows[j].Total {
+			return rows[i].Total > rows[j].Total
+		}
 		return strings.ToLower(rows[i].PlayerName) < strings.ToLower(rows[j].PlayerName)
 	})
 

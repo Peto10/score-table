@@ -105,7 +105,7 @@ SELECT
   team1_score, team2_score,
   started_at, ended_at
 FROM matches
-ORDER BY ended_at DESC, id DESC
+ORDER BY datetime(replace(replace(ended_at, 'T', ' '), 'Z', '')) DESC, id DESC
 `)
 	if err != nil {
 		return nil, err
