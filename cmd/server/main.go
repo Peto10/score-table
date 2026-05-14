@@ -60,13 +60,18 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(middleware.RedirectSlashes)
 	r.Use(middleware.Logger)
 
 	r.Mount("/static", http.StripPrefix("/static", http.FileServer(http.Dir("web/static"))))
 
 	r.Get("/display_score", h.DisplayScore)
 	r.Get("/events/score", h.ScoreEvents)
+
+	// Support both /control_panel and /control_panel/ (people often omit the trailing slash).
+	r.Get("/control_panel", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/control_panel/", http.StatusMovedPermanently)
+	})
 
 	r.Route("/control_panel", func(r chi.Router) {
 		r.Get("/", h.ControlPanel)
