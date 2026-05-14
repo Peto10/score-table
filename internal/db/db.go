@@ -62,6 +62,29 @@ CREATE TABLE IF NOT EXISTS match_player_goals (
   PRIMARY KEY (match_id, player_id, opponent_team_id),
   FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS teams (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS players (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  slot INTEGER NOT NULL CHECK (slot IN (1, 2)),
+  name TEXT NOT NULL,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  UNIQUE(team_id, slot)
+);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  timer_default_minutes INTEGER NOT NULL DEFAULT 5,
+  timer_default_seconds INTEGER NOT NULL DEFAULT 0,
+  timer_show_by_default INTEGER NOT NULL DEFAULT 1
+);
+
+INSERT OR IGNORE INTO app_settings (id) VALUES (1);
 `)
 	return err
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,14 +15,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"floorball-score-table/internal/config"
-	"floorball-score-table/internal/db"
-	"floorball-score-table/internal/match"
-	"floorball-score-table/internal/views"
+	"score-table/internal/db"
+	"score-table/internal/match"
+	"score-table/internal/views"
 )
 
 type HandlersDeps struct {
-	Config   *config.Config
 	DB       *sql.DB
 	Renderer *views.Renderer
 	Active   *match.Store
@@ -30,8 +29,6 @@ type HandlersDeps struct {
 }
 
 type Handlers struct {
-	cfg      *config.Config
-	cfgIndex config.Index
 	db       *sql.DB
 	renderer *views.Renderer
 	active   *match.Store
@@ -41,14 +38,39 @@ type Handlers struct {
 
 func NewHandlers(d HandlersDeps) *Handlers {
 	return &Handlers{
-		cfg:      d.Config,
-		cfgIndex: d.Config.BuildIndex(),
 		db:       d.DB,
 		renderer: d.Renderer,
 		active:   d.Active,
 		edit:     d.Edit,
 		hub:      d.Hub,
 	}
+}
+
+type teamView struct {
+	ID      string
+	Name    string
+	Players []playerView
+}
+
+type playerView struct {
+	ID   string
+	Name string
+}
+
+func toTeamViews(rows []db.TeamWithPlayers) []teamView {
+	out := make([]teamView, 0, len(rows))
+	for _, t := range rows {
+		pv := make([]playerView, 0, len(t.Players))
+		for _, p := range t.Players {
+			pv = append(pv, playerView{ID: strconv.FormatInt(p.ID, 10), Name: p.Name})
+		}
+		out = append(out, teamView{
+			ID:      strconv.FormatInt(t.ID, 10),
+			Name:    t.Name,
+			Players: pv,
+		})
+	}
+	return out
 }
 
 func setNoStore(w http.ResponseWriter) {
@@ -103,11 +125,18 @@ func (h *Handlers) ScoreEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ControlPanel(w http.ResponseWriter, r *http.Request) {
+	teamsRows, err := db.ListTeamsWithPlayers(r.Context(), h.db)
+	if err != nil {
+		http.Error(w, "failed to load teams", http.StatusInternalServerError)
+		return
+	}
+
 	setNoStore(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	errMsg := strings.TrimSpace(r.URL.Query().Get("err"))
 	_ = h.renderer.Render(w, "control_panel.html", map[string]any{
-		"Teams":       h.cfg.Teams,
+		"Teams":       toTeamViews(teamsRows),
+		"CanStart":    len(teamsRows) >= 2,
 		"Error":       errMsg,
 		"HasActive":   h.active.Get() != nil,
 		"ActiveRoute": "/control_panel/active_match",
@@ -115,11 +144,116 @@ func (h *Handlers) ControlPanel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) TeamsOverview(w http.ResponseWriter, r *http.Request) {
+	teamsRows, err := db.ListTeamsWithPlayers(r.Context(), h.db)
+	if err != nil {
+		http.Error(w, "failed to load teams", http.StatusInternalServerError)
+		return
+	}
+
 	setNoStore(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	errMsg := strings.TrimSpace(r.URL.Query().Get("err"))
 	_ = h.renderer.Render(w, "teams.html", map[string]any{
-		"Teams": h.cfg.Teams,
+		"Teams": toTeamViews(teamsRows),
+		"Error": errMsg,
 	})
+}
+
+func (h *Handlers) CreateTeam(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("invalid form"), http.StatusSeeOther)
+		return
+	}
+	teamName := strings.TrimSpace(r.FormValue("team_name"))
+	p1 := strings.TrimSpace(r.FormValue("player1"))
+	p2 := strings.TrimSpace(r.FormValue("player2"))
+	if teamName == "" || p1 == "" || p2 == "" {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("team name and 2 players are required"), http.StatusSeeOther)
+		return
+	}
+	if _, err := db.CreateTeamWithTwoPlayers(r.Context(), h.db, teamName, p1, p2); err != nil {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("failed to create team"), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/control_panel/teams", http.StatusSeeOther)
+}
+
+func (h *Handlers) UpdateTeam(w http.ResponseWriter, r *http.Request) {
+	teamID, err := strconv.ParseInt(chi.URLParam(r, "teamID"), 10, 64)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("unknown team"), http.StatusSeeOther)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("invalid form"), http.StatusSeeOther)
+		return
+	}
+	teamName := strings.TrimSpace(r.FormValue("team_name"))
+	p1 := strings.TrimSpace(r.FormValue("player1"))
+	p2 := strings.TrimSpace(r.FormValue("player2"))
+	if teamName == "" || p1 == "" || p2 == "" {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("team name and 2 players are required"), http.StatusSeeOther)
+		return
+	}
+	if err := db.UpdateTeamAndTwoPlayers(r.Context(), h.db, teamID, teamName, p1, p2); err != nil {
+		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("failed to update team"), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/control_panel/teams", http.StatusSeeOther)
+}
+
+func (h *Handlers) DeleteTeam(w http.ResponseWriter, r *http.Request) {
+	teamID, err := strconv.ParseInt(chi.URLParam(r, "teamID"), 10, 64)
+	if err == nil {
+		_ = db.DeleteTeam(r.Context(), h.db, teamID)
+	}
+	http.Redirect(w, r, "/control_panel/teams", http.StatusSeeOther)
+}
+
+func (h *Handlers) Settings(w http.ResponseWriter, r *http.Request) {
+	s, err := db.GetTimerSettings(r.Context(), h.db)
+	if err != nil {
+		s = db.TimerSettings{DefaultMinutes: 5, DefaultSeconds: 0, ShowByDefault: true}
+	}
+	setNoStore(w)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	errMsg := strings.TrimSpace(r.URL.Query().Get("err"))
+	_ = h.renderer.Render(w, "settings.html", map[string]any{
+		"Error": errMsg,
+		"Timer": map[string]any{
+			"DefaultMinutes": s.DefaultMinutes,
+			"DefaultSeconds": s.DefaultSeconds,
+			"ShowByDefault":  s.ShowByDefault,
+		},
+	})
+}
+
+func (h *Handlers) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/control_panel/settings?err="+url.QueryEscape("invalid form"), http.StatusSeeOther)
+		return
+	}
+	mins, _ := strconv.Atoi(strings.TrimSpace(r.FormValue("default_minutes")))
+	secs, _ := strconv.Atoi(strings.TrimSpace(r.FormValue("default_seconds")))
+	show := strings.TrimSpace(r.FormValue("show_by_default")) == "1"
+	if mins < 0 {
+		mins = 0
+	}
+	if secs < 0 {
+		secs = 0
+	}
+	if secs > 59 {
+		secs = 59
+	}
+	if err := db.UpdateTimerSettings(r.Context(), h.db, db.TimerSettings{
+		DefaultMinutes: mins,
+		DefaultSeconds: secs,
+		ShowByDefault:  show,
+	}); err != nil {
+		http.Redirect(w, r, "/control_panel/settings?err="+url.QueryEscape("failed to save settings"), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/control_panel/settings", http.StatusSeeOther)
 }
 
 func (h *Handlers) StartMatch(w http.ResponseWriter, r *http.Request) {
@@ -139,27 +273,55 @@ func (h *Handlers) StartMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t1, ok1 := h.cfgIndex.TeamsByID[team1ID]
-	t2, ok2 := h.cfgIndex.TeamsByID[team2ID]
-	if !ok1 || !ok2 {
+	t1Int, err1 := strconv.ParseInt(team1ID, 10, 64)
+	t2Int, err2 := strconv.ParseInt(team2ID, 10, 64)
+	if err1 != nil || err2 != nil {
 		http.Redirect(w, r, "/control_panel?err=unknown+team", http.StatusSeeOther)
 		return
 	}
 
+	t1, err := db.GetTeamWithPlayers(r.Context(), h.db, t1Int)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel?err=unknown+team", http.StatusSeeOther)
+		return
+	}
+	t2, err := db.GetTeamWithPlayers(r.Context(), h.db, t2Int)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel?err=unknown+team", http.StatusSeeOther)
+		return
+	}
+	if len(t1.Players) == 0 || len(t2.Players) == 0 {
+		http.Redirect(w, r, "/control_panel?err=teams+must+have+players", http.StatusSeeOther)
+		return
+	}
+
 	now := time.Now()
-	defaultMs := int64(h.cfg.Timer.DefaultDurationSeconds()) * 1000
-	showTimer := h.cfg.Timer.ShowByDefault && defaultMs > 0
+	settings, err := db.GetTimerSettings(r.Context(), h.db)
+	if err != nil {
+		settings = db.TimerSettings{DefaultMinutes: 5, DefaultSeconds: 0, ShowByDefault: true}
+	}
+	if settings.DefaultMinutes < 0 {
+		settings.DefaultMinutes = 0
+	}
+	if settings.DefaultSeconds < 0 {
+		settings.DefaultSeconds = 0
+	}
+	if settings.DefaultSeconds > 59 {
+		settings.DefaultSeconds = 59
+	}
+	defaultMs := int64(settings.DefaultMinutes*60+settings.DefaultSeconds) * 1000
+	showTimer := settings.ShowByDefault && defaultMs > 0
 
 	m := &match.ActiveMatch{
 		Team1: match.TeamSide{
-			TeamID:   t1.ID,
+			TeamID:   strconv.FormatInt(t1.ID, 10),
 			TeamName: t1.Name,
-			Players:  toPlayerRefs(t1.Players),
+			Players:  toPlayerRefsDB(t1.Players),
 		},
 		Team2: match.TeamSide{
-			TeamID:   t2.ID,
+			TeamID:   strconv.FormatInt(t2.ID, 10),
 			TeamName: t2.Name,
-			Players:  toPlayerRefs(t2.Players),
+			Players:  toPlayerRefsDB(t2.Players),
 		},
 		StartedAt:       now,
 		GoalsByPlayerID: map[string]int{},
@@ -205,6 +367,9 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 		"Score2":  t2Score,
 		"Goals":   goalsForView,
 		"Started": m.StartedAt.UTC().Format("2006-01-02 15:04:05"),
+		"Display": map[string]any{
+			"Swapped": m.DisplaySwap,
+		},
 		"Timer": map[string]any{
 			"Supported":   m.Timer.DefaultMs > 0,
 			"Show":        timerSnap.Show,
@@ -218,6 +383,12 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 			"Sec":         (timerSnap.RemainingMs / 1000) % 60,
 		},
 	})
+}
+
+func (h *Handlers) SwapDisplaySides(w http.ResponseWriter, r *http.Request) {
+	_ = h.active.ToggleDisplaySwap()
+	h.broadcastSnapshot()
+	http.Redirect(w, r, "/control_panel/active_match", http.StatusSeeOther)
 }
 
 func (h *Handlers) TimerToggle(w http.ResponseWriter, r *http.Request) {
@@ -536,14 +707,20 @@ func (h *Handlers) Stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	teamsRows, err := db.ListTeamsWithPlayers(r.Context(), h.db)
+	if err != nil {
+		http.Error(w, "failed to load teams", http.StatusInternalServerError)
+		return
+	}
+
 	setNoStore(w)
 	type col struct {
 		ID   string
 		Name string
 	}
-	cols := make([]col, 0, len(h.cfg.Teams))
-	for _, t := range h.cfg.Teams {
-		cols = append(cols, col{ID: t.ID, Name: t.Name})
+	cols := make([]col, 0, len(teamsRows))
+	for _, t := range teamsRows {
+		cols = append(cols, col{ID: strconv.FormatInt(t.ID, 10), Name: t.Name})
 	}
 
 	type row struct {
@@ -552,18 +729,21 @@ func (h *Handlers) Stats(w http.ResponseWriter, r *http.Request) {
 		ByOpp      map[string]int
 		Total      int
 	}
-	rows := make([]row, 0, len(h.cfgIndex.PlayersByID))
-	for pid, v := range h.cfgIndex.PlayersByID {
-		byOpp := stats[pid]
-		if byOpp == nil {
-			byOpp = map[string]int{}
+	rows := make([]row, 0, len(teamsRows)*2)
+	for _, t := range teamsRows {
+		for _, p := range t.Players {
+			pid := strconv.FormatInt(p.ID, 10)
+			byOpp := stats[pid]
+			if byOpp == nil {
+				byOpp = map[string]int{}
+			}
+			rows = append(rows, row{
+				PlayerID:   pid,
+				PlayerName: p.Name,
+				ByOpp:      byOpp,
+				Total:      totals[pid],
+			})
 		}
-		rows = append(rows, row{
-			PlayerID:   pid,
-			PlayerName: v.Player.Name,
-			ByOpp:      byOpp,
-			Total:      totals[pid],
-		})
 	}
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].Total != rows[j].Total {
@@ -628,12 +808,21 @@ func buildSnapshot(m *match.ActiveMatch) snapshot {
 			}
 		}
 	}
+	t1Name := m.Team1.TeamName
+	t2Name := m.Team2.TeamName
+	t1Score := s1
+	t2Score := s2
+	if m.DisplaySwap {
+		t1Name, t2Name = t2Name, t1Name
+		t1Score, t2Score = t2Score, t1Score
+	}
+
 	return snapshot{
 		Active:           true,
-		Team1Name:        m.Team1.TeamName,
-		Team2Name:        m.Team2.TeamName,
-		Team1Score:       s1,
-		Team2Score:       s2,
+		Team1Name:        t1Name,
+		Team2Name:        t2Name,
+		Team1Score:       t1Score,
+		Team2Score:       t2Score,
 		ShowTimer:        m.Timer.Show && m.Timer.DefaultMs > 0,
 		TimerRunning:     m.Timer.Show && m.Timer.Running,
 		TimerRemainingMs: rem,
@@ -691,17 +880,22 @@ func (h *Handlers) playerInActiveMatch(playerID string) bool {
 	return false
 }
 
-func toPlayerRefs(players []config.Player) []match.PlayerRef {
+func toPlayerRefsDB(players []db.PlayerRow) []match.PlayerRef {
 	out := make([]match.PlayerRef, 0, len(players))
 	for _, p := range players {
-		out = append(out, match.PlayerRef{PlayerID: p.ID, PlayerName: p.Name})
+		out = append(out, match.PlayerRef{
+			PlayerID:   strconv.FormatInt(p.ID, 10),
+			PlayerName: p.Name,
+		})
 	}
 	return out
 }
 
 func (h *Handlers) playersForTeam(teamID string, goalRows []db.PlayerGoalRow, rowTeamID string) []match.PlayerRef {
-	if t, ok := h.cfgIndex.TeamsByID[teamID]; ok && len(t.Players) > 0 {
-		return toPlayerRefs(t.Players)
+	if id, err := strconv.ParseInt(strings.TrimSpace(teamID), 10, 64); err == nil {
+		if t, err := db.GetTeamWithPlayers(context.Background(), h.db, id); err == nil && len(t.Players) > 0 {
+			return toPlayerRefsDB(t.Players)
+		}
 	}
 	seen := map[string]match.PlayerRef{}
 	for _, r := range goalRows {
