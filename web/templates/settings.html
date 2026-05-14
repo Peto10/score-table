@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings</title>
+    <link rel="stylesheet" href="/static/app.css?v=31" />
+  </head>
+  <body class="panelBody">
+    <main class="panelWrap">
+      <header class="panelHeader">
+        <div>
+          <div class="panelKicker">Control panel</div>
+          <h1 class="panelTitle">Settings</h1>
+          <div class="muted">Timer defaults used when starting a new match.</div>
+        </div>
+        <nav class="panelNav">
+          <a class="btn btnGhost" href="/control_panel">Back</a>
+        </nav>
+      </header>
+
+      {{if .Error}}
+        <div class="alert alertError">{{.Error}}</div>
+      {{end}}
+
+      <section class="card">
+        <form class="timerSet timerSetSettings" method="post" action="/control_panel/settings">
+          <label class="field">
+            <span class="labelText">Default minutes</span>
+            <input class="textInput" name="default_minutes" type="number" inputmode="numeric" min="0" max="9999" step="1" value="{{index .Timer "DefaultMinutes"}}" />
+          </label>
+          <label class="field">
+            <span class="labelText">Default seconds</span>
+            <input class="textInput" name="default_seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="{{index .Timer "DefaultSeconds"}}" />
+          </label>
+          <label class="checkRow" title="Show timer on the public display by default">
+            <input type="checkbox" name="show_by_default" value="1" {{if (index .Timer "ShowByDefault")}}checked{{end}} />
+            <span class="labelText">Show timer by default</span>
+          </label>
+          <div class="actions">
+            <button class="btn btnSuccess" type="submit">Save settings</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>
+
