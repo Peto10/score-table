@@ -15,6 +15,10 @@ type ActiveMatch struct {
 	GoalsByPlayerID map[string]int
 
 	Timer Timer
+
+	// DisplaySwap controls which team is shown on the left/right on /display_score.
+	// It does not change scoring/teams internally; it only swaps presentation.
+	DisplaySwap bool
 }
 
 type Timer struct {
@@ -108,6 +112,16 @@ func (s *Store) Dec(playerID string) (ok bool) {
 		return true
 	}
 	s.match.GoalsByPlayerID[playerID]--
+	return true
+}
+
+func (s *Store) ToggleDisplaySwap() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.match == nil {
+		return false
+	}
+	s.match.DisplaySwap = !s.match.DisplaySwap
 	return true
 }
 
