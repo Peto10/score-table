@@ -25,6 +25,7 @@ type HandlersDeps struct {
 	DB       *sql.DB
 	Renderer *views.Renderer
 	Active   *match.Store
+	Edit     *match.EditStore
 	Hub      *ScoreHub
 }
 
@@ -34,6 +35,7 @@ type Handlers struct {
 	db       *sql.DB
 	renderer *views.Renderer
 	active   *match.Store
+	edit     *match.EditStore
 	hub      *ScoreHub
 }
 
@@ -44,6 +46,7 @@ func NewHandlers(d HandlersDeps) *Handlers {
 		db:       d.DB,
 		renderer: d.Renderer,
 		active:   d.Active,
+		edit:     d.Edit,
 		hub:      d.Hub,
 	}
 }
@@ -310,6 +313,143 @@ func (h *Handlers) DeleteMatch(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
 }
 
+func (h *Handlers) EditMatch(w http.ResponseWriter, r *http.Request) {
+	matchID, err := strconv.ParseInt(chi.URLParam(r, "matchID"), 10, 64)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+
+	mRowForView, err := db.GetMatch(r.Context(), h.db, matchID)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+
+	// Start/edit session if needed.
+	current := h.edit.Get()
+	if current == nil || current.MatchID != matchID {
+		goalRows, err := db.ListMatchPlayerGoals(r.Context(), h.db, matchID)
+		if err != nil {
+			http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+			return
+		}
+
+		team1Players := h.playersForTeam(mRowForView.Team1ID, goalRows, mRowForView.Team1ID)
+		team2Players := h.playersForTeam(mRowForView.Team2ID, goalRows, mRowForView.Team2ID)
+
+		goals := map[string]int{}
+		for _, p := range team1Players {
+			goals[p.PlayerID] = 0
+		}
+		for _, p := range team2Players {
+			goals[p.PlayerID] = 0
+		}
+		for _, gr := range goalRows {
+			goals[gr.PlayerID] += gr.Goals
+		}
+
+		h.edit.Start(&match.EditMatch{
+			MatchID: matchID,
+			Team1: match.TeamSide{
+				TeamID:   mRowForView.Team1ID,
+				TeamName: mRowForView.Team1Name,
+				Players:  team1Players,
+			},
+			Team2: match.TeamSide{
+				TeamID:   mRowForView.Team2ID,
+				TeamName: mRowForView.Team2Name,
+				Players:  team2Players,
+			},
+			GoalsByPlayerID: goals,
+		})
+	}
+
+	e := h.edit.Get()
+	if e == nil || e.MatchID != matchID {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+
+	tmp := &match.ActiveMatch{Team1: e.Team1, Team2: e.Team2, GoalsByPlayerID: e.GoalsByPlayerID}
+	s1, s2 := computeScores(tmp)
+	goalsForView := make(map[string]int, len(e.Team1.Players)+len(e.Team2.Players))
+	for _, p := range e.Team1.Players {
+		goalsForView[p.PlayerID] = e.GoalsByPlayerID[p.PlayerID]
+	}
+	for _, p := range e.Team2.Players {
+		goalsForView[p.PlayerID] = e.GoalsByPlayerID[p.PlayerID]
+	}
+
+	setNoStore(w)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = h.renderer.Render(w, "edit_match.html", map[string]any{
+		"MatchID": matchID,
+		"Team1":   e.Team1,
+		"Team2":   e.Team2,
+		"Score1":  s1,
+		"Score2":  s2,
+		"Goals":   goalsForView,
+		"Ended":   formatMatchTime(mRowForView.EndedAt),
+	})
+}
+
+func (h *Handlers) EditPlayerInc(w http.ResponseWriter, r *http.Request) {
+	matchID, err := strconv.ParseInt(chi.URLParam(r, "matchID"), 10, 64)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+	playerID := chi.URLParam(r, "playerID")
+	_ = h.edit.Inc(matchID, playerID)
+	http.Redirect(w, r, fmt.Sprintf("/control_panel/history/%d/edit", matchID), http.StatusSeeOther)
+}
+
+func (h *Handlers) EditPlayerDec(w http.ResponseWriter, r *http.Request) {
+	matchID, err := strconv.ParseInt(chi.URLParam(r, "matchID"), 10, 64)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+	playerID := chi.URLParam(r, "playerID")
+	_ = h.edit.Dec(matchID, playerID)
+	http.Redirect(w, r, fmt.Sprintf("/control_panel/history/%d/edit", matchID), http.StatusSeeOther)
+}
+
+func (h *Handlers) SaveMatchEdits(w http.ResponseWriter, r *http.Request) {
+	matchID, err := strconv.ParseInt(chi.URLParam(r, "matchID"), 10, 64)
+	if err != nil {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+	e := h.edit.Get()
+	if e == nil || e.MatchID != matchID {
+		http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+		return
+	}
+
+	tmp := &match.ActiveMatch{Team1: e.Team1, Team2: e.Team2, GoalsByPlayerID: e.GoalsByPlayerID}
+	s1, s2 := computeScores(tmp)
+	rows := buildGoalRows(tmp)
+
+	if err := db.UpdateMatchScoresAndGoals(r.Context(), h.db, matchID, s1, s2, rows); err != nil {
+		http.Redirect(w, r, fmt.Sprintf("/control_panel/history/%d/edit", matchID), http.StatusSeeOther)
+		return
+	}
+
+	h.edit.Discard()
+	http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+}
+
+func (h *Handlers) DiscardMatchEdits(w http.ResponseWriter, r *http.Request) {
+	matchID, _ := strconv.ParseInt(chi.URLParam(r, "matchID"), 10, 64)
+	e := h.edit.Get()
+	if e != nil && e.MatchID == matchID {
+		h.edit.Discard()
+	}
+	http.Redirect(w, r, "/control_panel/history", http.StatusSeeOther)
+}
+
 func (h *Handlers) Stats(w http.ResponseWriter, r *http.Request) {
 	stats, totals, err := db.PlayerStats(r.Context(), h.db)
 	if err != nil {
@@ -446,6 +586,25 @@ func toPlayerRefs(players []config.Player) []match.PlayerRef {
 	for _, p := range players {
 		out = append(out, match.PlayerRef{PlayerID: p.ID, PlayerName: p.Name})
 	}
+	return out
+}
+
+func (h *Handlers) playersForTeam(teamID string, goalRows []db.PlayerGoalRow, rowTeamID string) []match.PlayerRef {
+	if t, ok := h.cfgIndex.TeamsByID[teamID]; ok && len(t.Players) > 0 {
+		return toPlayerRefs(t.Players)
+	}
+	seen := map[string]match.PlayerRef{}
+	for _, r := range goalRows {
+		if r.ScoringTeamID != rowTeamID {
+			continue
+		}
+		seen[r.PlayerID] = match.PlayerRef{PlayerID: r.PlayerID, PlayerName: r.PlayerName}
+	}
+	out := make([]match.PlayerRef, 0, len(seen))
+	for _, v := range seen {
+		out = append(out, v)
+	}
+	sort.Slice(out, func(i, j int) bool { return strings.ToLower(out[i].PlayerName) < strings.ToLower(out[j].PlayerName) })
 	return out
 }
 

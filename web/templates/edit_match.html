@@ -3,21 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Active Match</title>
-    <link rel="stylesheet" href="/static/app.css?v=17" />
-    <script defer src="/static/active_match.js?v=4"></script>
+    <title>Edit match</title>
+    <link rel="stylesheet" href="/static/app.css?v=16" />
+    <script defer src="/static/edit_match.js?v=1"></script>
   </head>
   <body class="panelBody">
     <main class="panelWrap">
       <header class="panelHeader">
         <div>
-          <div class="panelKicker">Active match</div>
+          <div class="panelKicker">Edit mode</div>
           <h1 class="panelTitle">{{.Team1.TeamName}} vs {{.Team2.TeamName}}</h1>
-          <div class="muted">Started: <code>{{.Started}}</code></div>
+          <div class="muted">
+            Ended: <code>{{.Ended}}</code>
+          </div>
         </div>
         <nav class="panelNav">
-          <a class="btn btnGhost" id="backLink" href="/control_panel">Back</a>
-          <a class="btn btnGhost" href="/display_score" target="_blank" rel="noreferrer">Open display</a>
+          <a class="btn btnGhost" id="backLink" href="/control_panel/history" data-discard-url="/control_panel/history/{{.MatchID}}/edit/discard">Back</a>
         </nav>
       </header>
 
@@ -39,11 +40,11 @@
               <div class="playerRow">
                 <div class="playerName">{{.PlayerName}}</div>
                 <div class="playerControls">
-                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/dec">
+                  <form method="post" action="/control_panel/history/{{$.MatchID}}/edit/player/{{.PlayerID}}/dec">
                     <button class="btn btnDanger btnIcon" type="submit" aria-label="Minus one">-</button>
                   </form>
                   <div class="playerGoals">{{index $.Goals .PlayerID}}</div>
-                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/inc">
+                  <form method="post" action="/control_panel/history/{{$.MatchID}}/edit/player/{{.PlayerID}}/inc">
                     <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one">+</button>
                   </form>
                 </div>
@@ -59,11 +60,11 @@
               <div class="playerRow">
                 <div class="playerName">{{.PlayerName}}</div>
                 <div class="playerControls">
-                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/dec">
+                  <form method="post" action="/control_panel/history/{{$.MatchID}}/edit/player/{{.PlayerID}}/dec">
                     <button class="btn btnDanger btnIcon" type="submit" aria-label="Minus one">-</button>
                   </form>
                   <div class="playerGoals">{{index $.Goals .PlayerID}}</div>
-                  <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/inc">
+                  <form method="post" action="/control_panel/history/{{$.MatchID}}/edit/player/{{.PlayerID}}/inc">
                     <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one">+</button>
                   </form>
                 </div>
@@ -74,11 +75,11 @@
       </section>
 
       <section class="actionsBar">
-        <form method="post" action="/control_panel/active_match/save">
-          <button class="btn btnSuccess btnBig" id="saveBtn" type="submit">Save match</button>
+        <form method="post" action="/control_panel/history/{{.MatchID}}/edit/save">
+          <button class="btn btnSuccess btnBig" type="submit">Save changes</button>
         </form>
-        <form method="post" action="/control_panel/active_match/discard">
-          <button class="btn btnDanger btnBig" id="discardBtn" type="submit" data-confirm="Discard this match? It will NOT be saved.">Discard match</button>
+        <form method="post" action="/control_panel/history/{{.MatchID}}/edit/discard">
+          <button class="btn btnDanger btnBig" type="submit" data-confirm="Discard changes? The saved match will stay unchanged.">Discard changes</button>
         </form>
       </section>
     </main>
