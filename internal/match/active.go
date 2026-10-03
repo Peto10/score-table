@@ -27,6 +27,7 @@ type Timer struct {
 	DefaultMs   int64
 	RemainingMs int64
 	Running     bool
+	Paused      bool // True only when a running timer was explicitly paused.
 	UpdatedAt   time.Time
 }
 
@@ -128,6 +129,7 @@ func (s *Store) ToggleDisplaySwap() bool {
 type TimerSnapshot struct {
 	Show        bool
 	Running     bool
+	Paused      bool
 	RemainingMs int64
 	DefaultMs   int64
 	UpdatedAt   time.Time
@@ -143,6 +145,7 @@ func (s *Store) TimerSnapshotNow(now time.Time) (TimerSnapshot, bool) {
 	rem := t.remainingAt(now)
 	if t.Running && rem == 0 {
 		t.Running = false
+		t.Paused = false
 		t.RemainingMs = 0
 		t.UpdatedAt = now
 		rem = 0
@@ -152,6 +155,7 @@ func (s *Store) TimerSnapshotNow(now time.Time) (TimerSnapshot, bool) {
 	return TimerSnapshot{
 		Show:        t.Show,
 		Running:     t.Running,
+		Paused:      t.Paused,
 		RemainingMs: rem,
 		DefaultMs:   t.DefaultMs,
 		UpdatedAt:   t.UpdatedAt,
@@ -168,6 +172,7 @@ func (s *Store) TimerSetVisibility(now time.Time, show bool) bool {
 	if !show {
 		t.Show = false
 		t.Running = false
+		t.Paused = false
 		t.RemainingMs = 0
 		t.UpdatedAt = now
 		return true
@@ -175,6 +180,7 @@ func (s *Store) TimerSetVisibility(now time.Time, show bool) bool {
 	t.Show = true
 	if t.DefaultMs > 0 && t.RemainingMs <= 0 {
 		t.RemainingMs = t.DefaultMs
+		t.Paused = false
 	}
 	t.UpdatedAt = now
 	return true
@@ -193,11 +199,13 @@ func (s *Store) TimerToggleRun(now time.Time) bool {
 	rem := t.remainingAt(now)
 	if rem == 0 {
 		t.Running = false
+		t.Paused = false
 		t.RemainingMs = 0
 		t.UpdatedAt = now
 		return true
 	}
 	t.RemainingMs = rem
+	t.Paused = t.Running
 	t.Running = !t.Running
 	t.UpdatedAt = now
 	return true
@@ -216,6 +224,7 @@ func (s *Store) TimerReset(now time.Time) bool {
 	t.RemainingMs = t.DefaultMs
 	t.UpdatedAt = now
 	t.Running = false
+	t.Paused = false
 	return true
 }
 
@@ -242,6 +251,7 @@ func (s *Store) TimerSet(now time.Time, remainingMs int64) bool {
 	t.RemainingMs = remainingMs
 	if remainingMs == 0 {
 		t.Running = false
+		t.Paused = false
 	}
 	t.UpdatedAt = now
 	return true

@@ -2,6 +2,8 @@
   const scoreboard = document.getElementById("scoreboard");
   const idleMessage = document.getElementById("idleMessage");
   const displayTimer = document.getElementById("displayTimer");
+  const displayTimerValue = document.getElementById("displayTimerValue");
+  const displayPauseStatus = document.getElementById("displayPauseStatus");
   const team1Name = document.getElementById("team1Name");
   const team2Name = document.getElementById("team2Name");
   const team1Score = document.getElementById("team1Score");
@@ -56,10 +58,16 @@
   const setTimerVisible = (visible) => {
     if (!displayTimer) return;
     displayTimer.classList.toggle("isHidden", !visible);
+    if (!visible) setTimerPaused(false);
+  };
+
+  const setTimerPaused = (paused) => {
+    if (displayTimer) displayTimer.classList.toggle("isPaused", paused);
+    if (displayPauseStatus) displayPauseStatus.classList.toggle("isHidden", !paused);
   };
 
   const tickTimer = () => {
-    if (!timerState || !displayTimer) return;
+    if (!timerState || !displayTimerValue) return;
     if (!timerState.show) {
       setTimerVisible(false);
       return;
@@ -69,8 +77,9 @@
       const elapsed = Date.now() - timerState.serverMs;
       remaining = Math.max(0, timerState.remainingMs - elapsed);
     }
-    displayTimer.textContent = fmtMMSS(remaining);
+    displayTimerValue.textContent = fmtMMSS(remaining);
     setTimerVisible(true);
+    setTimerPaused(timerState.paused && !timerState.running && remaining > 0);
 
     raf = requestAnimationFrame(tickTimer);
   };
@@ -97,6 +106,7 @@
     timerState = {
       show: !!snap.showTimer,
       running: !!snap.timerRunning,
+      paused: !!snap.timerPaused,
       remainingMs: Number(snap.timerRemainingMs ?? 0),
       serverMs: Number(snap.timerServerMs ?? Date.now()),
     };
@@ -125,4 +135,3 @@
     // EventSource will reconnect; keep last known state.
   };
 })();
-

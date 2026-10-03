@@ -790,6 +790,7 @@ type snapshot struct {
 
 	ShowTimer        bool  `json:"showTimer"`
 	TimerRunning     bool  `json:"timerRunning"`
+	TimerPaused      bool  `json:"timerPaused"`
 	TimerRemainingMs int64 `json:"timerRemainingMs"`
 	TimerServerMs    int64 `json:"timerServerMs"`
 }
@@ -825,6 +826,7 @@ func buildSnapshot(m *match.ActiveMatch) snapshot {
 		Team2Score:       t2Score,
 		ShowTimer:        m.Timer.Show && m.Timer.DefaultMs > 0,
 		TimerRunning:     m.Timer.Show && m.Timer.Running,
+		TimerPaused:      m.Timer.Show && m.Timer.DefaultMs > 0 && m.Timer.Paused && !m.Timer.Running && rem > 0,
 		TimerRemainingMs: rem,
 		TimerServerMs:    now.UnixMilli(),
 	}

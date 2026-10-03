@@ -502,10 +502,15 @@ code{
   padding: clamp(18px, 4vw, 56px);
   position: relative;
   --frameW: min(92vw, 1200px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(12px, 2vh, 28px);
 }
 .displayFrame{
   width: var(--frameW);
-  height: 100%;
+  flex:1;
+  min-height:0;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -560,10 +565,7 @@ code{
   font-size: clamp(5.0rem, 15vw, 13.5rem);
 }
 .displayTimer{
-  position:absolute;
-  top: clamp(14px, 2.5vw, 32px);
-  left: 50%;
-  transform: translateX(-50%);
+  flex-shrink:0;
   padding: clamp(12px, 2.2vw, 22px) clamp(18px, 3vw, 34px);
   border-radius: 999px;
   background: rgba(0,0,0,.44);
@@ -574,6 +576,44 @@ code{
   font-size: clamp(2.4rem, 7.4vw, 6.4rem);
   backdrop-filter: blur(10px);
   z-index: 3;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(6px, 1vh, 12px);
+}
+.displayTimer.isPaused{
+  color:#ffce70;
+  background:rgba(48,32,8,.94);
+  border-color:rgba(255,206,112,.7);
+  border-radius:clamp(20px, 3vw, 38px);
+}
+.displayPauseStatus{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.4em;
+  font-size:clamp(1rem, 2.4vw, 2rem);
+  font-weight:850;
+  line-height:1.2;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.displayPauseStatus svg{
+  width:1em;
+  height:1em;
+  flex-shrink:0;
+}
+@media (max-height: 600px){
+  .scoreboard{padding:clamp(12px, 3vh, 18px)}
+  .displayTimer{
+    padding:clamp(8px, 2vh, 12px) clamp(16px, 3vw, 34px);
+    font-size:clamp(1.8rem, 8vh, 3.2rem);
+  }
+  .displayPauseStatus{font-size:clamp(.85rem, 3.5vh, 1.2rem)}
+  .displayFrame .teamName{font-size:clamp(1rem, 5.5vh, 2rem)}
+  .displayFrame .scoreNumber{font-size:clamp(3rem, 22vh, 7rem)}
+  .displaySide{gap:clamp(6px, 2vh, 12px)}
 }
 .teamName{
   width: min(92vw, 1100px);
@@ -602,4 +642,3 @@ code{
   background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.60), rgba(255,255,255,0));
   opacity:.55;
 }
-
