@@ -21,6 +21,23 @@
         </nav>
       </header>
 
+      <section class="scoreCard">
+        <div class="scoreInline">
+          <div class="scoreInlineTeam teamClamp">{{.Team1.TeamName}}</div>
+          <div class="scoreInlineNum">{{.Score1}}</div>
+          <div class="scoreInlineMid">
+            <form method="post" action="/control_panel/active_match/display/swap_sides">
+              <button class="btn btnGhost btnMini" type="submit">
+                Swap sides
+              </button>
+            </form>
+            <div class="scoreInlineDash">:</div>
+          </div>
+          <div class="scoreInlineNum">{{.Score2}}</div>
+          <div class="scoreInlineTeam teamClamp">{{.Team2.TeamName}}</div>
+        </div>
+      </section>
+
       {{if (index .Timer "Supported")}}
         <section class="timerCard">
           <div class="timerTop">
@@ -79,23 +96,6 @@
         </section>
       {{end}}
 
-      <section class="scoreCard">
-        <div class="scoreInline">
-          <div class="scoreInlineTeam teamClamp">{{.Team1.TeamName}}</div>
-          <div class="scoreInlineNum">{{.Score1}}</div>
-          <div class="scoreInlineMid">
-            <form method="post" action="/control_panel/active_match/display/swap_sides">
-              <button class="btn btnGhost btnMini" type="submit">
-                Swap sides
-              </button>
-            </form>
-            <div class="scoreInlineDash">:</div>
-          </div>
-          <div class="scoreInlineNum">{{.Score2}}</div>
-          <div class="scoreInlineTeam teamClamp">{{.Team2.TeamName}}</div>
-        </div>
-      </section>
-
       <section class="twoCol">
         <div class="card">
           <h2 class="sectionTitle teamClamp">{{.Team1.TeamName}}</h2>
@@ -149,4 +149,3 @@
     </main>
   </body>
 </html>
-
