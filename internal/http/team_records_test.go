@@ -124,13 +124,19 @@ func TestTeamsOverviewSavedMatchRecords(t *testing.T) {
 			for _, result := range resultPattern.FindAllStringSubmatch(row, -1) {
 				results[result[1]] = result[2]
 			}
-			if len(results) != 3 {
-				t.Fatalf("team %d needs Wins, Losses and Draws; got %v", id, results)
-			}
 			for i, label := range []string{"Wins", "Losses", "Draws"} {
+				if want[index][i] == 0 {
+					if _, visible := results[label]; visible {
+						t.Errorf("team %d must hide %s with a zero count", id, label)
+					}
+					continue
+				}
 				if results[label] != strconv.Itoa(want[index][i]) {
 					t.Errorf("team %d %s = %s; want %d", id, label, results[label], want[index][i])
 				}
+			}
+			if want[index] == [3]int{} && strings.Contains(row, `class="teamResults"`) {
+				t.Errorf("team %d must not render an empty results list", id)
 			}
 		}
 	}

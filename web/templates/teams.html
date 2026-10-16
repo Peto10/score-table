@@ -197,11 +197,13 @@
           <div class="playerChip">{{.Name}}</div>
         {{end}}
       </div>
-      <dl class="teamResults" aria-label="Saved match results">
-        <div class="teamResult teamResultWins"><dt>Wins</dt><dd>{{.Wins}}</dd></div>
-        <div class="teamResult teamResultLosses"><dt>Losses</dt><dd>{{.Losses}}</dd></div>
-        <div class="teamResult teamResultDraws"><dt>Draws</dt><dd>{{.Draws}}</dd></div>
-      </dl>
+      {{if or (gt .Wins 0) (gt .Losses 0) (gt .Draws 0)}}
+        <dl class="teamResults" aria-label="Saved match results">
+          {{if gt .Wins 0}}<div class="teamResult teamResultWins"><dt>Wins</dt><dd>{{.Wins}}</dd></div>{{end}}
+          {{if gt .Losses 0}}<div class="teamResult teamResultLosses"><dt>Losses</dt><dd>{{.Losses}}</dd></div>{{end}}
+          {{if gt .Draws 0}}<div class="teamResult teamResultDraws"><dt>Draws</dt><dd>{{.Draws}}</dd></div>{{end}}
+        </dl>
+      {{end}}
     </div>
     <div class="historyActions">
       <button
