@@ -37,15 +37,17 @@ rm -rf data && cp -r template_data data
 
 ## Functionality
 
-- **Teams**: add/edit/delete in `http://localhost:8080/control_panel/teams`
+- **Teams**: add/edit/delete in `http://localhost:8080/control_panel/teams`, with wins, losses, and draws from saved matches.
+- **Optional team groups**: create or delete groups in Teams overview and choose a group when adding or editing a team. Grouped teams appear first, followed by teams without a group. Deleting a group keeps its teams. Groups only organize this overview; they do not affect team selection or matches.
 - **Timer defaults**: set in `http://localhost:8080/control_panel/settings`
 - **Live scoreboard**: `/display_score` updates automatically (no refresh).
 - **Start match**: pick two teams and start from `/control_panel`.
 - **Add/remove goals**: `+` / `-` per player in active match.
 - **Store matches**: writes match + goal rows into SQLite.
 - **Timer**: start/pause, reset, set minutes/seconds, show/hide.
-- **Swap display sides**: flip left/right teams on the public display.
-- **Match history**: list saved matches and delete them (with confirmation).
+- **Keyboard (active match)**: `P` starts/pauses the timer; `1`–`4` add a goal to the players in control panel order. Shortcuts are disabled while editing inputs.
+- **Swap sides**: flip teams in both views; the control panel always mirrors the public display.
+- **Match history**: list saved matches with highlighted winners or draws, scores centered below each team, and deletion with confirmation.
 - **Edit match**: open a saved match and adjust goals.
 - **Player stats matrix**: player goals per opponent team + TOTAL.
 

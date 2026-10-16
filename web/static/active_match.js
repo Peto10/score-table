@@ -44,6 +44,30 @@
     });
   };
 
+  const registerShortcuts = () => {
+    const buttons = new Map(
+      [...document.querySelectorAll("button[data-shortcut]")].map((button) => [
+        button.dataset.shortcut,
+        button,
+      ]),
+    );
+
+    document.addEventListener("keydown", (e) => {
+      if (e.defaultPrevented || e.repeat || e.isComposing || e.ctrlKey || e.altKey || e.metaKey) return;
+      const target = e.target;
+      if (target?.closest?.("input, textarea, select, [role='textbox']") || target?.isContentEditable) return;
+
+      let key = e.key.toLowerCase();
+      // Also support the number row on layouts such as Slovak, where digits need Shift.
+      if (!e.shiftKey && /^Digit[1-4]$/.test(e.code)) key = e.code.slice(-1);
+      const button = buttons.get(key);
+      if (!button || button.disabled || button.getClientRects().length === 0) return;
+
+      e.preventDefault();
+      button.click();
+    });
+  };
+
   const interceptBrowserBack = () => {
     // Create an extra history entry so we can intercept Back button via popstate.
     try {
@@ -89,6 +113,7 @@
   }
 
   confirmButtons();
+  registerShortcuts();
   interceptBrowserBack();
   startTimerTick();
 })();

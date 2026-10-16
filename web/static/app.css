@@ -42,9 +42,15 @@ code{
 .btn{
   appearance:none;
   border:1px solid transparent;
-  border-radius:14px;
-  padding:10px 14px;
+  border-radius:18px;
+  min-height:56px;
+  max-width:100%;
+  padding:16px 24px;
+  font-family:inherit;
+  font-size:1rem;
   font-weight:700;
+  line-height:1.25;
+  text-align:center;
   letter-spacing:.2px;
   background:var(--ghost);
   color:var(--text);
@@ -62,8 +68,8 @@ code{
 .btn:focus{outline:none}
 .btn:focus-visible{box-shadow: 0 0 0 4px rgba(255,255,255,.14)}
 
-.btnBig{padding:12px 18px; border-radius:16px; font-size:1.05rem}
-.btnIcon{width:44px; height:44px; border-radius:14px; font-size:1.25rem; padding:0}
+.btnBig{min-height:64px; padding:20px 30px; border-radius:20px; font-size:1.1rem}
+.btnIcon{width:64px; height:64px; min-height:64px; flex-shrink:0; border-radius:18px; font-size:1.5rem; padding:0}
 
 .btnSuccess{background: linear-gradient(180deg, rgba(38,194,129,.28), rgba(38,194,129,.16)); border-color: rgba(38,194,129,.35)}
 .btnSuccess:hover{background: linear-gradient(180deg, rgba(38,194,129,.38), rgba(38,194,129,.22))}
@@ -113,7 +119,7 @@ code{
 @media (max-width: 760px){
   .teamPick{grid-template-columns: 1fr; align-items:stretch}
 }
-.field{display:flex; flex-direction:column; gap:8px}
+.field{display:flex; flex-direction:column; gap:8px; min-width:0}
 .labelText{color:rgba(238,242,255,.88); font-weight:800}
 .checkRow{
   display:flex;
@@ -127,6 +133,8 @@ code{
 }
 .checkRow input{width:18px; height:18px}
 .select{
+  width:100%;
+  min-width:0;
   border-radius:16px;
   padding:12px 44px 12px 14px;
   background: linear-gradient(180deg, rgba(20,26,34,.92), rgba(10,12,16,.78));
@@ -161,6 +169,53 @@ code{
 .panelFooter{padding:6px 2px}
 
 /* Teams overview */
+.teamOverviewGrid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:14px;
+}
+.teamOverviewGrid > .historyItem{
+  min-width:0;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  gap:14px;
+}
+.teamOverviewGrid .historyMain{flex:1 1 auto}
+.teamOverviewGrid .historyActions{margin-top:auto; margin-left:0; justify-content:flex-end}
+.teamOverviewGrid .historyTeams{overflow-wrap:anywhere}
+.teamOverviewGrid .playerChip{min-width:0; overflow-wrap:anywhere}
+@media (max-width:980px){.teamOverviewGrid{grid-template-columns:repeat(2, minmax(0, 1fr))}}
+@media (max-width:680px){.teamOverviewGrid{grid-template-columns:minmax(0, 1fr)}}
+.teamGroup{border-top:3px solid rgba(140,160,255,.38)}
+.teamGroup[data-group-id=""]{border-top-color:rgba(167,176,195,.28)}
+.teamGroupHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:16px;
+}
+.teamGroupHeading{display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-width:0; flex:1 1 180px}
+.teamGroupLabel{display:block; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px}
+.teamGroupHeading .sectionTitle{margin:0; font-size:1.2rem; overflow-wrap:anywhere; min-width:0}
+.teamGroupCount{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 10px;
+  border-radius:999px;
+  border:1px solid rgba(140,160,255,.24);
+  background:rgba(140,160,255,.09);
+  color:var(--muted);
+  font-size:.8rem;
+  font-weight:800;
+  white-space:nowrap;
+}
+.teamGroupEmpty{padding:18px; border:1px dashed rgba(255,255,255,.14); border-radius:16px}
+.teamGroupHelp{margin:0; font-size:.85rem; line-height:1.5}
+.teamGroupDelete{margin:0; max-width:100%}
+.teamGroupDelete .btn{max-width:100%}
 .teamsGrid{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -199,6 +254,25 @@ code{
   flex-wrap:wrap;
   gap:10px;
 }
+.teamResults{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:4px 0 0;
+}
+.teamResult{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+}
+.teamResult dt{font-size:.8rem; font-weight:750}
+.teamResult dd{margin:0; font-size:1rem; font-weight:950}
+.teamResultWins{color:#74deb0; background:rgba(38,194,129,.1); border-color:rgba(38,194,129,.3)}
+.teamResultLosses{color:#ffaaaa; background:rgba(255,77,77,.08); border-color:rgba(255,77,77,.3)}
+.teamResultDraws{color:#ffce70; background:rgba(255,206,112,.08); border-color:rgba(255,206,112,.3)}
 .playerChip{
   padding:8px 10px;
   border-radius:999px;
@@ -248,6 +322,8 @@ code{
   .timerSet{grid-template-columns: 1fr; align-items:stretch}
 }
 .textInput{
+  width:100%;
+  min-width:0;
   border-radius:16px;
   padding:12px 12px;
   background: rgba(0,0,0,.22);
@@ -277,12 +353,16 @@ code{
   gap:6px;
 }
 .btnMini{
-  padding: 8px 10px;
-  font-size: .85rem;
-  border-radius: 14px;
-  line-height: 1;
+  min-height:44px;
+  padding:12px 18px;
+  font-size:.95rem;
+  border-radius:16px;
+  line-height:1.2;
 }
 .scoreInlineTeam{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
   font-weight:900;
   font-size:clamp(.95rem, 1.1vw + .8rem, 1.35rem);
   text-align:center;
@@ -290,6 +370,14 @@ code{
 }
 .scoreInlineNum{font-weight:950; font-size:clamp(2.1rem, 4vw + 1rem, 4.0rem); line-height:1}
 .scoreInlineDash{opacity:.55; font-weight:900; font-size:clamp(1.4rem, 2vw + 1rem, 2.0rem)}
+@media (max-width: 600px){
+  .scoreInline{grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px 10px}
+  .scoreInline > :nth-child(1){grid-area:1 / 1 / 2 / 3}
+  .scoreInline > :nth-child(5){grid-area:1 / 3 / 2 / 5}
+  .scoreInline > :nth-child(2){grid-area:2 / 1; justify-self:center}
+  .scoreInline > :nth-child(3){grid-area:2 / 2 / 3 / 4; justify-self:center}
+  .scoreInline > :nth-child(4){grid-area:2 / 4; justify-self:center}
+}
 
 .twoCol{display:grid; grid-template-columns: 1fr 1fr; gap:16px}
 @media (max-width: 900px){ .twoCol{grid-template-columns: 1fr} }
@@ -298,6 +386,7 @@ code{
 .playerList{display:flex; flex-direction:column; gap:10px}
 .playerRow{
   display:flex;
+  flex-wrap:wrap;
   align-items:center;
   justify-content:space-between;
   gap:12px;
@@ -306,8 +395,8 @@ code{
   background: rgba(0,0,0,.18);
   border:1px solid rgba(255,255,255,.08);
 }
-.playerName{font-weight:850}
-.playerControls{display:flex; align-items:center; gap:10px}
+.playerName{font-weight:850; flex:1 1 120px; min-width:0; overflow-wrap:anywhere}
+.playerControls{display:flex; align-items:center; gap:10px; flex-shrink:0; margin-left:auto}
 .playerGoals{
   width:44px;
   text-align:center;
@@ -326,6 +415,7 @@ code{
 .historyList{display:flex; flex-direction:column; gap:12px}
 .historyItem{
   display:flex;
+  flex-wrap:wrap;
   gap:12px;
   align-items:center;
   justify-content:space-between;
@@ -335,9 +425,40 @@ code{
   border:1px solid rgba(255,255,255,.08);
 }
 .historyTeams{font-weight:900}
-.historyScore{font-weight:950; font-size:1.35rem}
-.historyMain{display:flex; flex-direction:column; gap:6px}
-.historyActions{display:flex; align-items:center}
+.historyMatchup{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr);
+  gap:8px clamp(8px, 2vw, 20px);
+  align-items:center;
+  width:100%;
+  max-width:660px;
+  text-align:center;
+}
+.historyTeamName{
+  min-width:0;
+  padding:8px 10px;
+  border:1px solid transparent;
+  border-radius:12px;
+  font-weight:900;
+  overflow-wrap:anywhere;
+}
+.historyScore{
+  min-width:0;
+  padding:0 10px;
+  font-weight:950;
+  font-size:1.5rem;
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+}
+.historyVs, .historyColon{justify-self:center; color:var(--muted); font-weight:800}
+.historyVs{font-size:.85rem}
+.historyColon{font-size:1.35rem; line-height:1.1}
+.historyWinner{color:#74deb0}
+.historyTeamName.historyWinner{background:rgba(38,194,129,.12); border-color:rgba(38,194,129,.35)}
+.historyDraw{color:#cbd5e1}
+.historyTeamName.historyDraw{background:rgba(167,176,195,.12); border-color:rgba(167,176,195,.35)}
+.historyMain{display:flex; flex-direction:column; gap:6px; flex:1 1 220px; min-width:0}
+.historyActions{display:flex; align-items:center; flex-wrap:wrap; margin-left:auto}
 .historyActions{gap:10px}
 
 /* Modal */
@@ -473,6 +594,14 @@ code{
   padding:0;
   overflow:hidden;
 }
+.displayBody.isTimedOut{
+  color:#fff4f4;
+  background: radial-gradient(ellipse at 50% 0, rgba(255,77,77,.4), transparent 70%),
+              linear-gradient(180deg, #510e18, #21080e);
+}
+.isTimedOut .scoreboard{
+  box-shadow:inset 0 0 0 clamp(4px, .6vw, 10px) #ff4d4d;
+}
 .idleMessage{
   height:100vh;
   width:100vw;
@@ -513,9 +642,12 @@ code{
   min-height:0;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: end;
   column-gap: clamp(24px, 6vw, 140px);
+  row-gap: clamp(10px, 3vh, 40px);
   position: relative;
 }
 .displayFrame::after{
@@ -532,21 +664,19 @@ code{
   pointer-events: none;
 }
 .displaySide{
-  display:flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(10px, 3vh, 40px);
-  min-width: 0;
+  /* Share the name and score rows across both teams. */
+  display:contents;
 }
 .displayLeft{
-  align-items: center;
   text-align: center;
 }
 .displayRight{
-  align-items: center;
   text-align: center;
 }
+.displayLeft > *{grid-column:1}
+.displayRight > *{grid-column:2}
 .displayFrame .teamName{
+  grid-row:1;
   width: 100%;
   text-align: inherit;
   /* Display page: allow wrapping; JS will auto-fit to <= 3 lines. */
@@ -562,7 +692,9 @@ code{
   font-size: clamp(1.6rem, 4.6vw, 4.4rem);
 }
 .displayFrame .scoreNumber{
-  font-size: clamp(5.0rem, 15vw, 13.5rem);
+  grid-row:2;
+  justify-self:center;
+  font-size: clamp(7.5rem, 22.5vw, 20.25rem);
 }
 .displayTimer{
   flex-shrink:0;
@@ -573,7 +705,7 @@ code{
   box-shadow: 0 18px 70px rgba(0,0,0,.35);
   font-weight: 1000;
   letter-spacing: .08em;
-  font-size: clamp(2.4rem, 7.4vw, 6.4rem);
+  font-size: clamp(3.6rem, 11.1vw, 9.6rem);
   backdrop-filter: blur(10px);
   z-index: 3;
   display:flex;
@@ -586,6 +718,20 @@ code{
   background:rgba(48,32,8,.94);
   border-color:rgba(255,206,112,.7);
   border-radius:clamp(20px, 3vw, 38px);
+}
+.isTimedOut .displayTimer{
+  color:#fff4f4;
+  background:rgba(120,15,30,.94);
+  border-color:#ff7777;
+  border-radius:clamp(20px, 3vw, 38px);
+  box-shadow:0 0 70px rgba(255,77,77,.35);
+}
+.displayTimeoutStatus{
+  color:#ffb8b8;
+  font-size:clamp(1.2rem, 3vw, 3rem);
+  line-height:1.2;
+  letter-spacing:.18em;
+  text-transform:uppercase;
 }
 .displayPauseStatus{
   display:flex;
@@ -608,12 +754,13 @@ code{
   .scoreboard{padding:clamp(12px, 3vh, 18px)}
   .displayTimer{
     padding:clamp(8px, 2vh, 12px) clamp(16px, 3vw, 34px);
-    font-size:clamp(1.8rem, 8vh, 3.2rem);
+    font-size:clamp(2.7rem, 12vh, 4.8rem);
   }
   .displayPauseStatus{font-size:clamp(.85rem, 3.5vh, 1.2rem)}
+  .displayTimeoutStatus{font-size:clamp(1rem, 4vh, 1.5rem)}
   .displayFrame .teamName{font-size:clamp(1rem, 5.5vh, 2rem)}
-  .displayFrame .scoreNumber{font-size:clamp(3rem, 22vh, 7rem)}
-  .displaySide{gap:clamp(6px, 2vh, 12px)}
+  .displayFrame .scoreNumber{font-size:clamp(4.5rem, 33vh, 10.5rem)}
+  .displayFrame{row-gap:clamp(6px, 2vh, 12px)}
 }
 .teamName{
   width: min(92vw, 1100px);

@@ -77,6 +77,19 @@ CREATE TABLE IF NOT EXISTS players (
   UNIQUE(team_id, slot)
 );
 
+CREATE TABLE IF NOT EXISTS team_groups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS team_group_memberships (
+  team_id INTEGER PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
+  group_id INTEGER NOT NULL REFERENCES team_groups(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS team_group_memberships_group_id
+  ON team_group_memberships(group_id);
+
 CREATE TABLE IF NOT EXISTS app_settings (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   timer_default_minutes INTEGER NOT NULL DEFAULT 5,

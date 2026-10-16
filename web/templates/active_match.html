@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Active Match</title>
-    <link rel="stylesheet" href="/static/app.css?v=31" />
-    <script defer src="/static/active_match.js?v=5"></script>
+    <link rel="stylesheet" href="/static/app.css?v=35" />
+    <script defer src="/static/active_match.js?v=6"></script>
   </head>
   <body class="panelBody">
     <main class="panelWrap">
@@ -38,63 +38,61 @@
         </div>
       </section>
 
-      {{if (index .Timer "Supported")}}
-        <section class="timerCard">
-          <div class="timerTop">
-            <div>
-              <div class="panelKicker">Timer</div>
-              <div
-                id="timerValue"
-                class="timerValue"
-                data-show="{{if (index .Timer "Show")}}1{{else}}0{{end}}"
-                data-running="{{if (index .Timer "Running")}}1{{else}}0{{end}}"
-                data-remaining-ms="{{index .Timer "RemainingMs"}}"
-                data-server-ms="{{index .Timer "ServerMs"}}"
-              >
-                {{if (index .Timer "Show")}}{{index .Timer "Text"}}{{else}}00:00{{end}}
-              </div>
-              {{if (index .Timer "Show")}}
-                <div class="muted">Default: <code>{{index .Timer "DefText"}}</code></div>
-              {{end}}
+      <section class="timerCard">
+        <div class="timerTop">
+          <div>
+            <div class="panelKicker">Timer</div>
+            <div
+              id="timerValue"
+              class="timerValue"
+              data-show="{{if (index .Timer "Show")}}1{{else}}0{{end}}"
+              data-running="{{if (index .Timer "Running")}}1{{else}}0{{end}}"
+              data-remaining-ms="{{index .Timer "RemainingMs"}}"
+              data-server-ms="{{index .Timer "ServerMs"}}"
+            >
+              {{if (index .Timer "Show")}}{{index .Timer "Text"}}{{else}}00:00{{end}}
             </div>
-            <div class="timerActions">
-              {{if (index .Timer "Show")}}
-                <form method="post" action="/control_panel/active_match/timer/toggle">
-                  <button class="btn btnPrimary" type="submit">{{if (index .Timer "Running")}}Pause{{else}}Start{{end}}</button>
-                </form>
-                <form method="post" action="/control_panel/active_match/timer/reset">
-                  <button class="btn btnGhost" type="submit">Reset</button>
-                </form>
-                <form method="post" action="/control_panel/active_match/timer/visibility">
-                  <input type="hidden" name="show" value="0" />
-                  <button class="btn btnGhost" type="submit">Hide timer</button>
-                </form>
-              {{else}}
-                <form method="post" action="/control_panel/active_match/timer/visibility">
-                  <input type="hidden" name="show" value="1" />
-                  <button class="btn btnGhost" type="submit">Show timer</button>
-                </form>
-              {{end}}
-            </div>
+            {{if (index .Timer "Show")}}
+              <div class="muted">Default: <code>{{index .Timer "DefText"}}</code></div>
+            {{end}}
           </div>
+          <div class="timerActions">
+            {{if (index .Timer "Show")}}
+              <form method="post" action="/control_panel/active_match/timer/toggle">
+                <button class="btn btnPrimary" type="submit" data-shortcut="p" aria-keyshortcuts="P">{{if (index .Timer "Running")}}Pause{{else}}Start{{end}} (P)</button>
+              </form>
+              <form method="post" action="/control_panel/active_match/timer/reset">
+                <button class="btn btnGhost" type="submit">Reset</button>
+              </form>
+              <form method="post" action="/control_panel/active_match/timer/visibility">
+                <input type="hidden" name="show" value="0" />
+                <button class="btn btnGhost" type="submit">Hide timer</button>
+              </form>
+            {{else}}
+              <form method="post" action="/control_panel/active_match/timer/visibility">
+                <input type="hidden" name="show" value="1" />
+                <button class="btn btnGhost" type="submit">Show timer</button>
+              </form>
+            {{end}}
+          </div>
+        </div>
 
-          {{if (index .Timer "Show")}}
-            <form class="timerSet" method="post" action="/control_panel/active_match/timer/set">
-              <label class="field">
-                <span class="labelText">Minutes</span>
-                <input class="textInput" name="minutes" type="number" inputmode="numeric" min="0" max="9999" step="1" value="{{index .Timer "Min"}}" />
-              </label>
-              <label class="field">
-                <span class="labelText">Seconds</span>
-                <input class="textInput" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="{{index .Timer "Sec"}}" />
-              </label>
-              <div class="actions">
-                <button class="btn btnSuccess" type="submit">Set</button>
-              </div>
-            </form>
-          {{end}}
-        </section>
-      {{end}}
+        {{if (index .Timer "Show")}}
+          <form class="timerSet" method="post" action="/control_panel/active_match/timer/set">
+            <label class="field">
+              <span class="labelText">Minutes</span>
+              <input class="textInput" name="minutes" type="number" inputmode="numeric" min="0" max="9999" step="1" value="{{index .Timer "Min"}}" />
+            </label>
+            <label class="field">
+              <span class="labelText">Seconds</span>
+              <input class="textInput" name="seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="{{index .Timer "Sec"}}" />
+            </label>
+            <div class="actions">
+              <button class="btn btnSuccess" type="submit">Set</button>
+            </div>
+          </form>
+        {{end}}
+      </section>
 
       <section class="twoCol">
         <div class="card">
@@ -102,14 +100,14 @@
           <div class="playerList">
             {{range .Team1.Players}}
               <div class="playerRow">
-                <div class="playerName">{{.PlayerName}}</div>
+                <div class="playerName">{{.PlayerName}}{{with index $.PlayerShortcuts .PlayerID}} ({{.}}){{end}}</div>
                 <div class="playerControls">
                   <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/dec">
                     <button class="btn btnDanger btnIcon" type="submit" aria-label="Minus one">-</button>
                   </form>
                   <div class="playerGoals">{{index $.Goals .PlayerID}}</div>
                   <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/inc">
-                    <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one">+</button>
+                    <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one"{{with index $.PlayerShortcuts .PlayerID}} data-shortcut="{{.}}" aria-keyshortcuts="{{.}}"{{end}}>+</button>
                   </form>
                 </div>
               </div>
@@ -122,14 +120,14 @@
           <div class="playerList">
             {{range .Team2.Players}}
               <div class="playerRow">
-                <div class="playerName">{{.PlayerName}}</div>
+                <div class="playerName">{{.PlayerName}}{{with index $.PlayerShortcuts .PlayerID}} ({{.}}){{end}}</div>
                 <div class="playerControls">
                   <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/dec">
                     <button class="btn btnDanger btnIcon" type="submit" aria-label="Minus one">-</button>
                   </form>
                   <div class="playerGoals">{{index $.Goals .PlayerID}}</div>
                   <form method="post" action="/control_panel/active_match/player/{{.PlayerID}}/inc">
-                    <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one">+</button>
+                    <button class="btn btnSuccess btnIcon" type="submit" aria-label="Plus one"{{with index $.PlayerShortcuts .PlayerID}} data-shortcut="{{.}}" aria-keyshortcuts="{{.}}"{{end}}>+</button>
                   </form>
                 </div>
               </div>

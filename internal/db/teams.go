@@ -44,10 +44,10 @@ ORDER BY t.id ASC, p.slot ASC, p.id ASC
 			tid   int64
 			tname string
 
-			pid    sql.NullInt64
-			pteam  sql.NullInt64
-			pslot  sql.NullInt64
-			pname  sql.NullString
+			pid   sql.NullInt64
+			pteam sql.NullInt64
+			pslot sql.NullInt64
+			pname sql.NullString
 		)
 		if err := rows.Scan(&tid, &tname, &pid, &pteam, &pslot, &pname); err != nil {
 			return nil, err
@@ -81,6 +81,10 @@ ORDER BY t.id ASC, p.slot ASC, p.id ASC
 }
 
 func CreateTeamWithTwoPlayers(ctx context.Context, db *sql.DB, teamName, player1, player2 string) (int64, error) {
+	return CreateTeamWithTwoPlayersInGroup(ctx, db, teamName, player1, player2, 0)
+}
+
+func CreateTeamWithTwoPlayersInGroup(ctx context.Context, db *sql.DB, teamName, player1, player2 string, groupID int64) (int64, error) {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -102,19 +106,38 @@ func CreateTeamWithTwoPlayers(ctx context.Context, db *sql.DB, teamName, player1
 	if _, err := tx.ExecContext(ctx, `INSERT INTO players (team_id, slot, name) VALUES (?, 2, ?)`, teamID, player2); err != nil {
 		return 0, err
 	}
+	if err := setTeamGroup(ctx, tx, teamID, groupID); err != nil {
+		return 0, err
+	}
 
 	return teamID, tx.Commit()
 }
 
 func UpdateTeamAndTwoPlayers(ctx context.Context, db *sql.DB, teamID int64, teamName, player1, player2 string) error {
+	return updateTeamAndTwoPlayers(ctx, db, teamID, teamName, player1, player2, nil)
+}
+
+func UpdateTeamAndTwoPlayersInGroup(ctx context.Context, db *sql.DB, teamID int64, teamName, player1, player2 string, groupID int64) error {
+	return updateTeamAndTwoPlayers(ctx, db, teamID, teamName, player1, player2, &groupID)
+}
+
+func updateTeamAndTwoPlayers(ctx context.Context, db *sql.DB, teamID int64, teamName, player1, player2 string, groupID *int64) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if _, err := tx.ExecContext(ctx, `UPDATE teams SET name = ? WHERE id = ?`, teamName, teamID); err != nil {
+	res, err := tx.ExecContext(ctx, `UPDATE teams SET name = ? WHERE id = ?`, teamName, teamID)
+	if err != nil {
 		return err
+	}
+	changed, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if changed == 0 {
+		return sql.ErrNoRows
 	}
 
 	// Keep player IDs stable by updating by (team_id, slot). If a slot row is missing, insert it.
@@ -130,13 +153,29 @@ ON CONFLICT(team_id, slot) DO UPDATE SET name = excluded.name
 `, teamID, player2); err != nil {
 		return err
 	}
+	// Legacy updates leave membership unchanged; grouped edits explicitly replace it.
+	if groupID != nil {
+		if err := setTeamGroup(ctx, tx, teamID, *groupID); err != nil {
+			return err
+		}
+	}
 
 	return tx.Commit()
 }
 
 func DeleteTeam(ctx context.Context, db *sql.DB, teamID int64) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM teams WHERE id = ?`, teamID)
-	return err
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM team_group_memberships WHERE team_id = ?`, teamID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM teams WHERE id = ?`, teamID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func GetTeamWithPlayers(ctx context.Context, db *sql.DB, teamID int64) (TeamWithPlayers, error) {
@@ -164,10 +203,10 @@ ORDER BY p.slot ASC, p.id ASC
 			tid   int64
 			tname string
 
-			pid    sql.NullInt64
-			pteam  sql.NullInt64
-			pslot  sql.NullInt64
-			pname  sql.NullString
+			pid   sql.NullInt64
+			pteam sql.NullInt64
+			pslot sql.NullInt64
+			pname sql.NullString
 		)
 		if err := rows.Scan(&tid, &tname, &pid, &pteam, &pslot, &pname); err != nil {
 			return TeamWithPlayers{}, err
@@ -190,4 +229,3 @@ ORDER BY p.slot ASC, p.id ASC
 	}
 	return t, nil
 }
-

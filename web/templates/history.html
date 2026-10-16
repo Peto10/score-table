@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Match History</title>
-    <link rel="stylesheet" href="/static/app.css?v=31" />
+    <link rel="stylesheet" href="/static/app.css?v=38" />
     <script>
       window.addEventListener("click", (e) => {
         const btn = e.target?.closest?.("[data-confirm]");
@@ -37,8 +37,14 @@
           {{range .Matches}}
             <div class="historyItem">
               <div class="historyMain">
-                <div class="historyTeams teamClamp">{{.Team1Name}} vs {{.Team2Name}}</div>
-                <div class="historyScore">{{.Team1Score}} : {{.Team2Score}}</div>
+                <div class="historyMatchup">
+                  <div class="historyTeamName{{if gt .Team1Score .Team2Score}} historyWinner{{else if eq .Team1Score .Team2Score}} historyDraw{{end}}">{{.Team1Name}}</div>
+                  <span class="historyVs">vs</span>
+                  <div class="historyTeamName{{if gt .Team2Score .Team1Score}} historyWinner{{else if eq .Team1Score .Team2Score}} historyDraw{{end}}">{{.Team2Name}}</div>
+                  <div class="historyScore{{if gt .Team1Score .Team2Score}} historyWinner{{else if eq .Team1Score .Team2Score}} historyDraw{{end}}">{{.Team1Score}}</div>
+                  <span class="historyColon">:</span>
+                  <div class="historyScore{{if gt .Team2Score .Team1Score}} historyWinner{{else if eq .Team1Score .Team2Score}} historyDraw{{end}}">{{.Team2Score}}</div>
+                </div>
                 <div class="historyMeta muted">
                   <span>Ended: <code>{{.EndedAt}}</code></span>
                 </div>

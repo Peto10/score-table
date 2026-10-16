@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Teams</title>
-    <link rel="stylesheet" href="/static/app.css?v=31" />
+    <link rel="stylesheet" href="/static/app.css?v=40" />
     <script>
       window.addEventListener("click", (e) => {
         const btn = e.target?.closest?.("[data-confirm]");
@@ -23,25 +23,31 @@
         const teamName = document.getElementById("teamName");
         const player1 = document.getElementById("player1");
         const player2 = document.getElementById("player2");
+        const teamGroup = document.getElementById("teamGroup");
         const cancelBtn = document.getElementById("teamDialogCancel");
+        const groupDialog = document.getElementById("groupDialog");
+        const groupForm = document.getElementById("groupForm");
+        const groupName = document.getElementById("groupName");
 
         const openAdd = () => {
+          form.reset();
           title.textContent = "Add team";
           form.action = "/control_panel/teams/create";
-          teamName.value = "";
-          player1.value = "";
-          player2.value = "";
+          teamGroup.value = "";
           dlg.showModal();
           teamName.focus();
         };
 
         const openEdit = (btn) => {
+          form.reset();
           title.textContent = "Edit team";
           const id = btn.getAttribute("data-team-id");
           form.action = "/control_panel/teams/" + encodeURIComponent(id) + "/update";
           teamName.value = btn.getAttribute("data-team-name") || "";
           player1.value = btn.getAttribute("data-player1") || "";
           player2.value = btn.getAttribute("data-player2") || "";
+          const groupID = btn.getAttribute("data-group-id") || "";
+          teamGroup.value = [...teamGroup.options].some((option) => option.value === groupID) ? groupID : "";
           dlg.showModal();
           teamName.focus();
         };
@@ -51,6 +57,14 @@
           b.addEventListener("click", () => openEdit(b));
         });
         cancelBtn?.addEventListener("click", () => dlg.close());
+        dlg.addEventListener("close", () => form.reset());
+        document.getElementById("addGroupBtn")?.addEventListener("click", () => {
+          groupForm.reset();
+          groupDialog.showModal();
+          groupName.focus();
+        });
+        document.getElementById("groupDialogCancel")?.addEventListener("click", () => groupDialog.close());
+        groupDialog.addEventListener("close", () => groupForm.reset());
       });
     </script>
   </head>
@@ -60,10 +74,11 @@
         <div>
           <div class="panelKicker">Control panel</div>
           <h1 class="panelTitle">Teams overview</h1>
-          <div class="muted">Add, edit, and remove teams stored in the database.</div>
+          <div class="muted">Wins, losses, and draws from saved matches.</div>
         </div>
         <nav class="panelNav">
           <button class="btn btnPrimary" id="addTeamBtn" type="button">Add team</button>
+          <button class="btn btnGhost" id="addGroupBtn" type="button">Add group</button>
           <a class="btn btnGhost" href="/control_panel">Back</a>
         </nav>
       </header>
@@ -72,46 +87,48 @@
         <div class="alert alertError">{{.Error}}</div>
       {{end}}
 
-      <section class="card">
-        {{if not .Teams}}
+      {{if not .Teams}}
+        <section class="card teamsEmpty">
           <div class="muted">No teams yet. Click <strong>Add team</strong> to create your first one.</div>
-        {{end}}
-        <div class="historyList">
-          {{range .Teams}}
-            <div class="historyItem">
-              <div class="historyMain">
-                <div class="historyTeams teamClamp">{{.Name}}</div>
-                <div class="historyMeta muted">
-                  <span>{{len .Players}} players</span>
-                </div>
-                <div class="teamPlayers">
-                  {{range .Players}}
-                    <div class="playerChip">{{.Name}}</div>
-                  {{end}}
-                </div>
-              </div>
-              <div class="historyActions">
-                <button
-                  class="btn btnGhost"
-                  type="button"
-                  data-edit-team
-                  data-team-id="{{.ID}}"
-                  data-team-name="{{.Name}}"
-                  data-player1="{{if ge (len .Players) 1}}{{(index .Players 0).Name}}{{end}}"
-                  data-player2="{{if ge (len .Players) 2}}{{(index .Players 1).Name}}{{end}}"
-                >
-                  Edit
-                </button>
-                <form method="post" action="/control_panel/teams/{{.ID}}/delete">
-                  <button class="btn btnDanger" type="submit" data-confirm="Delete team &quot;{{.Name}}&quot;?">Delete</button>
-                </form>
-              </div>
-            </div>
-          {{end}}
-        </div>
-      </section>
+        </section>
+      {{end}}
 
-      <dialog class="modal" id="teamDialog">
+      {{range .Groups}}
+        <section class="teamGroup card" data-group-id="{{.ID}}">
+          <header class="teamGroupHeader">
+            <div class="teamGroupHeading">
+              <h2 class="sectionTitle"><span class="teamGroupLabel muted">Group</span> {{.Name}}</h2>
+              <span class="teamGroupCount">{{len .Teams}} {{if eq (len .Teams) 1}}team{{else}}teams{{end}}</span>
+            </div>
+            <form class="teamGroupDelete" method="post" action="/control_panel/teams/groups/{{.ID}}/delete">
+              <button class="btn btnDanger" type="submit" data-confirm="Delete group &quot;{{.Name}}&quot;? Teams will be kept without a group.">Delete group</button>
+            </form>
+          </header>
+          {{if .Teams}}
+            <div class="teamOverviewGrid">
+              {{range .Teams}}{{template "teamOverviewRow" .}}{{end}}
+            </div>
+          {{else}}
+            <p class="muted teamGroupEmpty">No teams in this group yet.</p>
+          {{end}}
+        </section>
+      {{end}}
+
+      {{if .UngroupedTeams}}
+        <section class="teamGroup card" data-group-id="">
+          <header class="teamGroupHeader">
+            <div class="teamGroupHeading">
+              <h2 class="sectionTitle">{{if .Groups}}No group{{else}}Teams{{end}}</h2>
+              <span class="teamGroupCount">{{len .UngroupedTeams}} {{if eq (len .UngroupedTeams) 1}}team{{else}}teams{{end}}</span>
+            </div>
+          </header>
+          <div class="teamOverviewGrid">
+            {{range .UngroupedTeams}}{{template "teamOverviewRow" .}}{{end}}
+          </div>
+        </section>
+      {{end}}
+
+      <dialog class="modal" id="teamDialog" aria-labelledby="teamDialogTitle">
         <form class="modalCard" id="teamForm" method="post" action="/control_panel/teams/create">
           <header class="modalHeader">
             <div class="modalTitle" id="teamDialogTitle">Add team</div>
@@ -130,6 +147,14 @@
               <span class="labelText">Player 2</span>
               <input class="textInput" id="player2" name="player2" type="text" required maxlength="80" autocomplete="off" />
             </label>
+            <label class="field">
+              <span class="labelText">Group (optional)</span>
+              <select class="select" id="teamGroup" name="group_id" aria-describedby="teamGroupHelp">
+                <option value="">No group</option>
+                {{range .Groups}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+              </select>
+              <span class="teamGroupHelp muted" id="teamGroupHelp">Groups organize this overview. You can leave a team without a group.</span>
+            </label>
           </div>
 
           <footer class="modalFooter">
@@ -138,7 +163,63 @@
           </footer>
         </form>
       </dialog>
+
+      <dialog class="modal" id="groupDialog" aria-labelledby="groupDialogTitle">
+        <form class="modalCard" id="groupForm" method="post" action="/control_panel/teams/groups/create">
+          <header class="modalHeader">
+            <div class="modalTitle" id="groupDialogTitle">Add group</div>
+          </header>
+          <div class="modalBody">
+            <label class="field">
+              <span class="labelText">Group name</span>
+              <input class="textInput" id="groupName" name="group_name" type="text" required maxlength="80" autocomplete="off" />
+            </label>
+          </div>
+          <footer class="modalFooter">
+            <button class="btn btnGhost" id="groupDialogCancel" type="button">Cancel</button>
+            <button class="btn btnSuccess" type="submit">Add group</button>
+          </footer>
+        </form>
+      </dialog>
     </main>
   </body>
 </html>
+
+{{define "teamOverviewRow"}}
+  <div class="historyItem">
+    <div class="historyMain">
+      <div class="historyTeams teamClamp">{{.Name}}</div>
+      <div class="historyMeta muted">
+        <span>{{len .Players}} players</span>
+      </div>
+      <div class="teamPlayers">
+        {{range .Players}}
+          <div class="playerChip">{{.Name}}</div>
+        {{end}}
+      </div>
+      <dl class="teamResults" aria-label="Saved match results">
+        <div class="teamResult teamResultWins"><dt>Wins</dt><dd>{{.Wins}}</dd></div>
+        <div class="teamResult teamResultLosses"><dt>Losses</dt><dd>{{.Losses}}</dd></div>
+        <div class="teamResult teamResultDraws"><dt>Draws</dt><dd>{{.Draws}}</dd></div>
+      </dl>
+    </div>
+    <div class="historyActions">
+      <button
+        class="btn btnGhost"
+        type="button"
+        data-edit-team
+        data-team-id="{{.ID}}"
+        data-team-name="{{.Name}}"
+        data-group-id="{{.GroupID}}"
+        data-player1="{{if ge (len .Players) 1}}{{(index .Players 0).Name}}{{end}}"
+        data-player2="{{if ge (len .Players) 2}}{{(index .Players 1).Name}}{{end}}"
+      >
+        Edit
+      </button>
+      <form method="post" action="/control_panel/teams/{{.ID}}/delete">
+        <button class="btn btnDanger" type="submit" data-confirm="Delete team &quot;{{.Name}}&quot;?">Delete</button>
+      </form>
+    </div>
+  </div>
+{{end}}
 

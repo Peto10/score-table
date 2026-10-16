@@ -74,6 +74,8 @@ func main() {
 		r.Post("/settings", h.UpdateSettings)
 
 		r.Get("/teams", h.TeamsOverview)
+		r.Post("/teams/groups/create", h.CreateTeamGroup)
+		r.Post("/teams/groups/{groupID}/delete", h.DeleteTeamGroup)
 		r.Post("/teams/create", h.CreateTeam)
 		r.Post("/teams/{teamID}/update", h.UpdateTeam)
 		r.Post("/teams/{teamID}/delete", h.DeleteTeam)

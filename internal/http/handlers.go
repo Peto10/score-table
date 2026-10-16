@@ -149,13 +149,48 @@ func (h *Handlers) TeamsOverview(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to load teams", http.StatusInternalServerError)
 		return
 	}
+	records, err := db.ListTeamRecords(r.Context(), h.db)
+	if err != nil {
+		http.Error(w, "failed to load team records", http.StatusInternalServerError)
+		return
+	}
+	groupRows, err := db.ListTeamGroups(r.Context(), h.db)
+	if err != nil {
+		http.Error(w, "failed to load groups", http.StatusInternalServerError)
+		return
+	}
+	memberships, err := db.ListTeamGroupMemberships(r.Context(), h.db)
+	if err != nil {
+		http.Error(w, "failed to load team groups", http.StatusInternalServerError)
+		return
+	}
+	groups := make([]teamGroupView, 0, len(groupRows))
+	groupIndex := make(map[int64]int, len(groupRows))
+	for _, group := range groupRows {
+		groupIndex[group.ID] = len(groups)
+		groups = append(groups, teamGroupView{ID: strconv.FormatInt(group.ID, 10), Name: group.Name})
+	}
+	teams := make([]teamOverviewView, 0, len(teamsRows))
+	ungrouped := make([]teamOverviewView, 0)
+	for i, team := range toTeamViews(teamsRows) {
+		view := teamOverviewView{teamView: team, TeamRecord: records[team.ID]}
+		if index, ok := groupIndex[memberships[teamsRows[i].ID]]; ok {
+			view.GroupID = groups[index].ID
+			groups[index].Teams = append(groups[index].Teams, view)
+		} else {
+			ungrouped = append(ungrouped, view)
+		}
+		teams = append(teams, view)
+	}
 
 	setNoStore(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	errMsg := strings.TrimSpace(r.URL.Query().Get("err"))
 	_ = h.renderer.Render(w, "teams.html", map[string]any{
-		"Teams": toTeamViews(teamsRows),
-		"Error": errMsg,
+		"Teams":          teams,
+		"Groups":         groups,
+		"UngroupedTeams": ungrouped,
+		"Error":          errMsg,
 	})
 }
 
@@ -171,7 +206,12 @@ func (h *Handlers) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("team name and 2 players are required"), http.StatusSeeOther)
 		return
 	}
-	if _, err := db.CreateTeamWithTwoPlayers(r.Context(), h.db, teamName, p1, p2); err != nil {
+	groupID, err := optionalTeamGroupID(r.PostForm.Get("group_id"))
+	if err != nil {
+		redirectTeamsError(w, r, "invalid group")
+		return
+	}
+	if _, err := db.CreateTeamWithTwoPlayersInGroup(r.Context(), h.db, teamName, p1, p2, groupID); err != nil {
 		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("failed to create team"), http.StatusSeeOther)
 		return
 	}
@@ -195,7 +235,12 @@ func (h *Handlers) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("team name and 2 players are required"), http.StatusSeeOther)
 		return
 	}
-	if err := db.UpdateTeamAndTwoPlayers(r.Context(), h.db, teamID, teamName, p1, p2); err != nil {
+	groupID, err := optionalTeamGroupID(r.PostForm.Get("group_id"))
+	if err != nil {
+		redirectTeamsError(w, r, "invalid group")
+		return
+	}
+	if err := db.UpdateTeamAndTwoPlayersInGroup(r.Context(), h.db, teamID, teamName, p1, p2, groupID); err != nil {
 		http.Redirect(w, r, "/control_panel/teams?err="+url.QueryEscape("failed to update team"), http.StatusSeeOther)
 		return
 	}
@@ -310,7 +355,7 @@ func (h *Handlers) StartMatch(w http.ResponseWriter, r *http.Request) {
 		settings.DefaultSeconds = 59
 	}
 	defaultMs := int64(settings.DefaultMinutes*60+settings.DefaultSeconds) * 1000
-	showTimer := settings.ShowByDefault && defaultMs > 0
+	showTimer := settings.ShowByDefault
 
 	m := &match.ActiveMatch{
 		Team1: match.TeamSide{
@@ -349,6 +394,22 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 	setNoStore(w)
 	now := time.Now()
 	t1Score, t2Score := computeScores(m)
+	// The operator faces the audience, so control sides mirror the public display.
+	leftTeam, rightTeam := m.Team2, m.Team1
+	leftScore, rightScore := t2Score, t1Score
+	if m.DisplaySwap {
+		leftTeam, rightTeam = m.Team1, m.Team2
+		leftScore, rightScore = t1Score, t2Score
+	}
+	playerShortcuts := make(map[string]string, 4)
+	for side, team := range []match.TeamSide{leftTeam, rightTeam} {
+		for i, p := range team.Players {
+			if i >= 2 {
+				break
+			}
+			playerShortcuts[p.PlayerID] = strconv.Itoa(side*2 + i + 1)
+		}
+	}
 	goalsForView := make(map[string]int, len(m.Team1.Players)+len(m.Team2.Players))
 	for _, p := range m.Team1.Players {
 		goalsForView[p.PlayerID] = m.GoalsByPlayerID[p.PlayerID]
@@ -361,17 +422,17 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = h.renderer.Render(w, "active_match.html", map[string]any{
-		"Team1":   m.Team1,
-		"Team2":   m.Team2,
-		"Score1":  t1Score,
-		"Score2":  t2Score,
-		"Goals":   goalsForView,
-		"Started": m.StartedAt.UTC().Format("2006-01-02 15:04:05"),
+		"Team1":           leftTeam,
+		"Team2":           rightTeam,
+		"Score1":          leftScore,
+		"Score2":          rightScore,
+		"Goals":           goalsForView,
+		"PlayerShortcuts": playerShortcuts,
+		"Started":         m.StartedAt.UTC().Format("2006-01-02 15:04:05"),
 		"Display": map[string]any{
 			"Swapped": m.DisplaySwap,
 		},
 		"Timer": map[string]any{
-			"Supported":   m.Timer.DefaultMs > 0,
 			"Show":        timerSnap.Show,
 			"Running":     timerSnap.Running,
 			"RemainingMs": timerSnap.RemainingMs,
@@ -379,8 +440,8 @@ func (h *Handlers) ActiveMatch(w http.ResponseWriter, r *http.Request) {
 			"ServerMs":    now.UnixMilli(),
 			"Text":        formatMMSS(timerSnap.RemainingMs),
 			"DefText":     formatMMSS(timerSnap.DefaultMs),
-			"Min":         timerSnap.RemainingMs / 1000 / 60,
-			"Sec":         (timerSnap.RemainingMs / 1000) % 60,
+			"Min":         timerSnap.DefaultMs / 1000 / 60,
+			"Sec":         (timerSnap.DefaultMs / 1000) % 60,
 		},
 	})
 }
@@ -791,6 +852,7 @@ type snapshot struct {
 	ShowTimer        bool  `json:"showTimer"`
 	TimerRunning     bool  `json:"timerRunning"`
 	TimerPaused      bool  `json:"timerPaused"`
+	TimerExpired     bool  `json:"timerExpired"`
 	TimerRemainingMs int64 `json:"timerRemainingMs"`
 	TimerServerMs    int64 `json:"timerServerMs"`
 }
@@ -799,7 +861,7 @@ func buildSnapshot(m *match.ActiveMatch) snapshot {
 	s1, s2 := computeScores(m)
 	now := time.Now()
 	rem := int64(0)
-	if m.Timer.Show && m.Timer.DefaultMs > 0 {
+	if m.Timer.Show {
 		rem = m.Timer.RemainingMs
 		if m.Timer.Running {
 			elapsed := now.Sub(m.Timer.UpdatedAt).Milliseconds()
@@ -809,6 +871,8 @@ func buildSnapshot(m *match.ActiveMatch) snapshot {
 			}
 		}
 	}
+	running := m.Timer.Running && rem > 0
+	expired := rem <= 0 && (m.Timer.Expired || (m.Timer.Running && m.Timer.RemainingMs > 0))
 	t1Name := m.Team1.TeamName
 	t2Name := m.Team2.TeamName
 	t1Score := s1
@@ -824,9 +888,10 @@ func buildSnapshot(m *match.ActiveMatch) snapshot {
 		Team2Name:        t2Name,
 		Team1Score:       t1Score,
 		Team2Score:       t2Score,
-		ShowTimer:        m.Timer.Show && m.Timer.DefaultMs > 0,
-		TimerRunning:     m.Timer.Show && m.Timer.Running,
-		TimerPaused:      m.Timer.Show && m.Timer.DefaultMs > 0 && m.Timer.Paused && !m.Timer.Running && rem > 0,
+		ShowTimer:        m.Timer.Show,
+		TimerRunning:     m.Timer.Show && running,
+		TimerPaused:      m.Timer.Show && !running && !expired,
+		TimerExpired:     m.Timer.Show && expired,
 		TimerRemainingMs: rem,
 		TimerServerMs:    now.UnixMilli(),
 	}

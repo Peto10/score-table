@@ -16,7 +16,7 @@ type ActiveMatch struct {
 
 	Timer Timer
 
-	// DisplaySwap controls which team is shown on the left/right on /display_score.
+	// DisplaySwap controls the public display sides; the control panel mirrors them.
 	// It does not change scoring/teams internally; it only swaps presentation.
 	DisplaySwap bool
 }
@@ -28,6 +28,7 @@ type Timer struct {
 	RemainingMs int64
 	Running     bool
 	Paused      bool // True only when a running timer was explicitly paused.
+	Expired     bool // True only after a running timer naturally counts down to zero.
 	UpdatedAt   time.Time
 }
 
@@ -83,6 +84,9 @@ func (s *Store) Get() *ActiveMatch {
 func (s *Store) Start(m *ActiveMatch) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if m != nil {
+		m.Timer.Expired = false
+	}
 	s.match = m
 }
 
@@ -130,6 +134,7 @@ type TimerSnapshot struct {
 	Show        bool
 	Running     bool
 	Paused      bool
+	Expired     bool
 	RemainingMs int64
 	DefaultMs   int64
 	UpdatedAt   time.Time
@@ -144,6 +149,7 @@ func (s *Store) TimerSnapshotNow(now time.Time) (TimerSnapshot, bool) {
 	t := &s.match.Timer
 	rem := t.remainingAt(now)
 	if t.Running && rem == 0 {
+		t.Expired = t.Expired || t.RemainingMs > 0
 		t.Running = false
 		t.Paused = false
 		t.RemainingMs = 0
@@ -156,6 +162,7 @@ func (s *Store) TimerSnapshotNow(now time.Time) (TimerSnapshot, bool) {
 		Show:        t.Show,
 		Running:     t.Running,
 		Paused:      t.Paused,
+		Expired:     t.Expired,
 		RemainingMs: rem,
 		DefaultMs:   t.DefaultMs,
 		UpdatedAt:   t.UpdatedAt,
@@ -169,6 +176,7 @@ func (s *Store) TimerSetVisibility(now time.Time, show bool) bool {
 		return false
 	}
 	t := &s.match.Timer
+	t.Expired = false
 	if !show {
 		t.Show = false
 		t.Running = false
@@ -178,7 +186,7 @@ func (s *Store) TimerSetVisibility(now time.Time, show bool) bool {
 		return true
 	}
 	t.Show = true
-	if t.DefaultMs > 0 && t.RemainingMs <= 0 {
+	if t.RemainingMs <= 0 {
 		t.RemainingMs = t.DefaultMs
 		t.Paused = false
 	}
@@ -193,11 +201,12 @@ func (s *Store) TimerToggleRun(now time.Time) bool {
 		return false
 	}
 	t := &s.match.Timer
-	if !t.Show || t.DefaultMs <= 0 {
+	if !t.Show {
 		return false
 	}
 	rem := t.remainingAt(now)
 	if rem == 0 {
+		t.Expired = t.Expired || (t.Running && t.RemainingMs > 0)
 		t.Running = false
 		t.Paused = false
 		t.RemainingMs = 0
@@ -218,13 +227,11 @@ func (s *Store) TimerReset(now time.Time) bool {
 		return false
 	}
 	t := &s.match.Timer
-	if t.DefaultMs <= 0 {
-		return false
-	}
 	t.RemainingMs = t.DefaultMs
 	t.UpdatedAt = now
 	t.Running = false
 	t.Paused = false
+	t.Expired = false
 	return true
 }
 
@@ -235,9 +242,6 @@ func (s *Store) TimerSet(now time.Time, remainingMs int64) bool {
 		return false
 	}
 	t := &s.match.Timer
-	if t.DefaultMs <= 0 {
-		return false
-	}
 	if remainingMs < 0 {
 		remainingMs = 0
 	}
@@ -249,6 +253,7 @@ func (s *Store) TimerSet(now time.Time, remainingMs int64) bool {
 	// Setting time also updates the per-match default (for "Reset" + UI).
 	t.DefaultMs = remainingMs
 	t.RemainingMs = remainingMs
+	t.Expired = false
 	if remainingMs == 0 {
 		t.Running = false
 		t.Paused = false
