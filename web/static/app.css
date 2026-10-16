@@ -181,9 +181,24 @@ code{
   justify-content:flex-start;
   gap:14px;
 }
-.teamOverviewGrid .historyMain{flex:1 1 auto}
-.teamOverviewGrid .historyActions{margin-top:auto; margin-left:0; justify-content:flex-end}
-.teamOverviewGrid .historyTeams{overflow-wrap:anywhere}
+.teamOverviewGrid .historyMain{flex:1 1 auto; text-align:center}
+.teamOverviewGrid .historyActions{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  align-items:stretch;
+  margin-top:auto;
+  margin-left:0;
+}
+.teamOverviewGrid .historyActions form{display:flex; min-width:0; margin:0}
+.teamOverviewGrid .historyActions .btn{width:100%; min-width:0; padding-inline:12px}
+.teamOverviewGrid .teamPlayers, .teamOverviewGrid .teamResults{justify-content:center}
+.teamOverviewGrid .historyTeams{
+  font-size:1.4rem;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+  line-clamp:3;
+  -webkit-line-clamp:3;
+}
 .teamOverviewGrid .playerChip{min-width:0; overflow-wrap:anywhere}
 @media (max-width:980px){.teamOverviewGrid{grid-template-columns:repeat(2, minmax(0, 1fr))}}
 @media (max-width:680px){.teamOverviewGrid{grid-template-columns:minmax(0, 1fr)}}
